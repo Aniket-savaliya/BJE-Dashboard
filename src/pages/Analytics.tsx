@@ -1,6 +1,6 @@
 import { Box, Typography, Paper } from '@mui/material';
-import LineChart from '../components/dashboard/LineChart';
-import BarChart from '../components/dashboard/BarChart';
+// import LineChart from '../components/dashboard/LineChart';
+// import BarChart from '../components/dashboard/BarChart';
 
 export default function Analytics() {
   return (
@@ -18,21 +18,21 @@ export default function Analytics() {
           <Typography variant="h6" gutterBottom>
             Performance Overview
           </Typography>
-          <LineChart />
+          {/* <LineChart /> */}
         </Paper>
         
         <Paper sx={{ p: 2 }}>
           <Typography variant="h6" gutterBottom>
             Project Distribution
           </Typography>
-          <BarChart />
+          {/* <BarChart /> */}
         </Paper>
         
         <Paper sx={{ p: 2 }}>
           <Typography variant="h6" gutterBottom>
             User Engagement
           </Typography>
-          <LineChart />
+          {/* <LineChart /> */}
         </Paper>
       </Box>
     </Box>

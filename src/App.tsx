@@ -1,57 +1,24 @@
-import { useState } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import { theme } from './styles/theme';
-import Orders from './pages/Orders'; 
-import Products from './pages/Products'; 
-import Sales from './pages/Sales'; 
+import { CustomThemeProvider } from './context/ThemeContext';
+import Products from './pages/Products';
+import Orders from './pages/Orders';
 import Settings from './pages/Settings';
-import Sidebar from './components/layout/Sidebar';
-import Header from './components/layout/Header';
-import { Box } from '@mui/material';
 
-const drawerWidth = 240;
-
-function App() {
-  const [isSidebarOpen, setSidebarOpen] = useState(true);
-
-  const handleSidebarToggle = () => {
-    setSidebarOpen(!isSidebarOpen);
-  };
-
+const App: React.FC = () => {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
+    <CustomThemeProvider>
       <Router>
-        <Box sx={{ display: 'flex' }}>
-          <Sidebar drawerWidth={drawerWidth} isOpen={isSidebarOpen} /> 
-          <Header drawerWidth={drawerWidth} handleSidebarToggle={handleSidebarToggle} /> 
-          <Box 
-            component="main" 
-            sx={{ 
-              flexGrow: 1, 
-              p: 3, 
-              mt: 8,
-              width: `calc(100% - ${isSidebarOpen ? drawerWidth : 0}px)`,
-              transition: theme.transitions.create(['width', 'margin'], {
-                easing: theme.transitions.easing.sharp,
-                duration: theme.transitions.duration.leavingScreen,
-              }),
-            }}
-          >
-            <Routes>
-              <Route path="/" element={<Navigate to="/orders" replace />} />
-              <Route path="/orders" element={<Orders />} />
-              <Route path="/products" element={<Products />} />
-              <Route path="/sales" element={<Sales />} />
-              <Route path="/settings" element={<Settings />} />
-            </Routes>
-          </Box>
-        </Box>
+        <Routes>
+          <Route path="/products" element={<Products />} />
+          <Route path="/orders" element={<Orders />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/" element={<Orders />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
       </Router>
-    </ThemeProvider>
+    </CustomThemeProvider>
   );
-}
+};
 
 export default App;

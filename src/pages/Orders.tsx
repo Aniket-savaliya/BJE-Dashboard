@@ -1,608 +1,760 @@
-import { 
-  Box, 
-  Typography, 
-  Paper, 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableContainer, 
-  TableHead, 
+import React, { useState, useMemo } from 'react';
+import {
+  Box,
+  Paper,
+  Typography,
+  TextField,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
   TableRow,
-  Button,
-  TablePagination,
-  CircularProgress,
   Chip,
   IconButton,
-  Avatar,
-  Stack,
-  TextField,
+  Select,
+  MenuItem,
+  // FormControl,
+  // InputLabel,
   InputAdornment,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Divider,
-  Grid,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
-  Tooltip
+  // Link,
+  Stack,
+  Button,
+  Grid as MuiGrid,
+  Collapse,
 } from '@mui/material';
-import { 
-  AttachMoney, 
-  PeopleAlt, 
-  CreditCard, 
-  AccessTime,
-  Edit as EditIcon,
-  DeleteOutline as DeleteIcon,
-  Search as SearchIcon,
-  Visibility as ViewIcon,
-  LocalShipping as ShippingIcon,
-  Payment as PaymentIcon,
-  Person as CustomerIcon,
-  Store as StoreIcon,
-  CalendarToday as DateIcon,
-  Close as CloseIcon
-} from '@mui/icons-material';
-import StatsCard from '../components/dashboard/StatsCard';
-import { useState, useEffect } from 'react';
+import Layout from '../components/layout/Layout';
+import SearchIcon from '@mui/icons-material/Search';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+// import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+// import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 
-// Define interfaces
+const Grid = MuiGrid as any;
+
 interface OrderItem {
-  id: number;
-  name: string;
   image: string;
-  price: number;
+  name: string;
   quantity: number;
+  price: string;
+  total: string;
 }
 
 interface Order {
-  id: number;
-  storeName: string;
-  orderNumber: string;
-  customerName: string;
+  store: string;
+  orderNo: string;
+  customer: {
+    name: string;
+    id: string;
+    email: string;
+    phone: string;
+  };
+  discount: string | null;
+  channel: string;
+  paymentType: string;
+  total: string;
   dateTime: string;
-  paymentStatus: string;
-  totalAmount: number;
-  discount: number;
+  shipping: {
+    method: string;
+    address: string;
+  };
+  payment: {
+    method: string;
+    subtotal: string;
+    shipping: string;
+    tax: string;
+  };
   items: OrderItem[];
 }
 
-// Sample data for the table
-const ordersData: Order[] = [
+const mockOrders: Order[] = [
   {
-    id: 1,
-    storeName: 'SuperMart',
-    orderNumber: 'ORD12345',
-    customerName: 'John Doe',
-    dateTime: '2024-03-04 12:30 PM',
-    paymentStatus: 'Paid',
-    totalAmount: 150.00,
-    discount: 15.00,
+    store: 'beefje-dev',
+    orderNo: '#1001',
+    customer: {
+      name: 'Working User',
+      id: '1',
+      email: 'john.smith@gmail.com',
+      phone: '+1 (555) 123-4567',
+    },
+    discount: 'SUMMER23',
+    channel: 'shopify_draft_order',
+    paymentType: 'manual',
+    total: '$89.95',
+    dateTime: '08/15/2023, 02:40 PM EDT',
+    shipping: {
+      method: 'Express Shipping',
+      address: '123 Main St, New York, NY 10001',
+    },
+    payment: {
+      method: 'manual',
+      subtotal: '$79.95',
+      shipping: '$10.00',
+      tax: '$0',
+    },
     items: [
       {
-        id: 1,
-        name: 'Premium Headphones',
-        image: 'https://via.placeholder.com/50',
-        price: 99.99,
-        quantity: 1
+        image: 'https://beefjerkyx.com/themes/custom/bjov2/images/2022/bje-logo-oval-small.png',
+        name: 'Original Beef Jerky - Large Pack',
+        quantity: 2,
+        price: '$24.99',
+        total: '$49.98',
       },
       {
-        id: 2,
-        name: 'Wireless Mouse',
-        image: 'https://via.placeholder.com/50',
-        price: 25.00,
-        quantity: 2
-      }
-    ]
+        image: 'https://beefjerkyx.com/themes/custom/bjov2/images/2022/bje-logo-oval-small.png',
+        name: 'Spicy Buffalo Wings Jerky',
+        quantity: 1,
+        price: '$29.97',
+        total: '$29.97',
+      },
+    ],
   },
   {
-    id: 2,
-    storeName: 'TechGadgets',
-    orderNumber: 'ORD12346',
-    customerName: 'Sarah Johnson',
-    dateTime: '2024-03-04 01:15 PM',
-    paymentStatus: 'Pending',
-    totalAmount: 299.99,
-    discount: 20.00,
+    store: 'bje-test',
+    orderNo: '#1002',
+    customer: {
+      name: 'Sarah diwan',
+      id: '2',
+      email: 'sarah.j@outlook.com',
+      phone: '+1 (555) 987-6543',
+    },
+    discount: null,
+    channel: 'Test_order',
+    paymentType: 'Card',
+    total: '$145.90',
+    dateTime: '08/14/2023, 11:23 AM EDT',
+    shipping: {
+      method: 'Standard Shipping',
+      address: '456 Oak Avenue, Los Angeles, CA 90001',
+    },
+    payment: {
+      method: 'Card',
+      subtotal: '$135.90',
+      shipping: '$10.00',
+      tax: '$0',
+    },
     items: [
       {
-        id: 3,
-        name: 'Smart Watch',
-        image: 'https://via.placeholder.com/50',
-        price: 199.99,
-        quantity: 1
+        image: 'https://beefjerkyx.com/themes/custom/bjov2/images/2022/bje-logo-oval-small.png',
+        name: 'Teriyaki Beef Jerky Bundle',
+        quantity: 3,
+        price: '$35.30',
+        total: '$105.90',
       },
       {
-        id: 4,
-        name: 'Screen Protector',
-        image: 'https://via.placeholder.com/50',
-        price: 20.00,
-        quantity: 5
-      }
-    ]
+        image: 'https://beefjerkyx.com/themes/custom/bjov2/images/2022/bje-logo-oval-small.png',
+        name: 'Buffalo Peanuts - Family Size',
+        quantity: 2,
+        price: '$15.00',
+        total: '$30.00',
+      },
+    ],
   },
   {
-    id: 3,
-    storeName: 'FashionHub',
-    orderNumber: 'ORD12347',
-    customerName: 'Michael Brown',
-    dateTime: '2024-03-04 02:00 PM',
-    paymentStatus: 'Paid',
-    totalAmount: 175.50,
-    discount: 10.00,
+    store: 'beef-dev',
+    orderNo: '#1003',
+    customer: {
+      name: 'Main Chen',
+      id: '3',
+      email: 'mchen@company.com',
+      phone: '+1 (555) 234-5678',
+    },
+    discount: 'FIRSTORDER',
+    channel: 'shopify_order',
+    paymentType: 'manual',
+    total: '$199.85',
+    dateTime: '08/13/2023, 09:15 AM EDT',
+    shipping: {
+      method: 'Next Day Delivery',
+      address: '789 Pine Street, Chicago, IL 60601',
+    },
+    payment: {
+      method: 'manual',
+      subtotal: '$174.85',
+      shipping: '$25.00',
+      tax: '$0',
+    },
     items: [
       {
-        id: 5,
-        name: 'Designer T-Shirt',
-        image: 'https://via.placeholder.com/50',
-        price: 45.00,
-        quantity: 2
+        image: 'https://beefjerkyx.com/themes/custom/bjov2/images/2022/bje-logo-oval-small.png',
+        name: 'Premium Jerky Gift Box',
+        quantity: 1,
+        price: '$99.95',
+        total: '$99.95',
       },
       {
-        id: 6,
-        name: 'Jeans',
-        image: 'https://via.placeholder.com/50',
-        price: 85.50,
-        quantity: 1
-      }
-    ]
+        image: 'https://beefjerkyx.com/themes/custom/bjov2/images/2022/bje-logo-oval-small.png',
+        name: 'Honey BBQ Beef Jerky',
+        quantity: 2,
+        price: '$37.45',
+        total: '$74.90',
+      },
+    ],
   },
-  {
-    id: 4,
-    storeName: 'HomeDecor',
-    orderNumber: 'ORD12348',
-    customerName: 'Emily Wilson',
-    dateTime: '2024-03-04 03:45 PM',
-    paymentStatus: 'Paid',
-    totalAmount: 450.00,
-    discount: 45.00,
-    items: [
-      {
-        id: 7,
-        name: 'Modern Lamp',
-        image: 'https://via.placeholder.com/50',
-        price: 120.00,
-        quantity: 2
-      },
-      {
-        id: 8,
-        name: 'Wall Clock',
-        image: 'https://via.placeholder.com/50',
-        price: 210.00,
-        quantity: 1
-      }
-    ]
-  },
-  {
-    id: 5,
-    storeName: 'SportsWorld',
-    orderNumber: 'ORD12349',
-    customerName: 'David Miller',
-    dateTime: '2024-03-04 05:30 PM',
-    paymentStatus: 'Pending',
-    totalAmount: 275.75,
-    discount: 25.00,
-    items: [
-      {
-        id: 9,
-        name: 'Running Shoes',
-        image: 'https://via.placeholder.com/50',
-        price: 120.00,
-        quantity: 1
-      },
-      {
-        id: 10,
-        name: 'Sports Bag',
-        image: 'https://via.placeholder.com/50',
-        price: 45.00,
-        quantity: 1
-      },
-      {
-        id: 11,
-        name: 'Water Bottle',
-        image: 'https://via.placeholder.com/50',
-        price: 15.00,
-        quantity: 2
-      }
-    ]
-  },
-  {
-    id: 6,
-    storeName: 'BeautyCare',
-    orderNumber: 'ORD12350',
-    customerName: 'Sophia Lee',
-    dateTime: '2024-03-04 06:10 PM',
-    paymentStatus: 'Paid',
-    totalAmount: 180.00,
-    discount: 18.00,
-    items: [
-      {
-        id: 12,
-        name: 'Skincare Set',
-        image: 'https://via.placeholder.com/50',
-        price: 80.00,
-        quantity: 1
-      },
-      {
-        id: 13,
-        name: 'Makeup Kit',
-        image: 'https://via.placeholder.com/50',
-        price: 100.00,
-        quantity: 1
-      }
-    ]
-  },
-  {
-    id: 7,
-    storeName: 'BookStore',
-    orderNumber: 'ORD12351',
-    customerName: 'Robert Taylor',
-    dateTime: '2024-03-04 07:20 PM',
-    paymentStatus: 'Paid',
-    totalAmount: 95.99,
-    discount: 5.00,
-    items: [
-      {
-        id: 14,
-        name: 'Programming Book',
-        image: 'https://via.placeholder.com/50',
-        price: 45.99,
-        quantity: 1
-      },
-      {
-        id: 15,
-        name: 'Novel',
-        image: 'https://via.placeholder.com/50',
-        price: 25.00,
-        quantity: 2
-      }
-    ]
-  },
-  {
-    id: 8,
-    storeName: 'PetSupplies',
-    orderNumber: 'ORD12352',
-    customerName: 'Lisa Anderson',
-    dateTime: '2024-03-04 08:45 PM',
-    paymentStatus: 'Pending',
-    totalAmount: 120.50,
-    discount: 12.00,
-    items: [
-      {
-        id: 16,
-        name: 'Pet Food',
-        image: 'https://via.placeholder.com/50',
-        price: 40.00,
-        quantity: 2
-      },
-      {
-        id: 17,
-        name: 'Pet Toy',
-        image: 'https://via.placeholder.com/50',
-        price: 20.50,
-        quantity: 2
-      }
-    ]
-  }
 ];
 
-// Stats data
-const stats = [
-  { title: 'Total Revenue', value: '$45,231.89', change: '+20.1% from last month', icon: <AttachMoney /> },
-  { title: 'Subscriptions', value: '+2350', change: '+180.1% from last month', icon: <PeopleAlt /> },
-  { title: 'Sales', value: '+12,234', change: '+19% from last month', icon: <CreditCard /> },
-  { title: 'Active Now', value: '+573', change: '+201 since last hour', icon: <AccessTime /> },
-];
-
-interface ViewOrderDialogProps {
-  open: boolean;
-  onClose: () => void;
-  order: Order | null;
+interface ExpandableRowProps {
+  order: Order;
+  expanded: boolean;
+  onExpand: () => void;
 }
 
-function ViewOrderDialog({ open, onClose, order }: ViewOrderDialogProps) {
-  if (!order) return null;
-
+const ExpandableRow: React.FC<ExpandableRowProps> = ({ order, expanded, onExpand }) => {
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6">Order Details</Typography>
-          <IconButton onClick={onClose} size="small">
-            <CloseIcon />
-          </IconButton>
-        </Box>
-      </DialogTitle>
-      <DialogContent>
-        <Box sx={{ p: 2 }}>
-          {/* Order Header */}
-          <Grid container spacing={3} sx={{ mb: 3 }}>
-            <Grid item xs={12} md={6}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <StoreIcon color="primary" />
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary">Store</Typography>
-                  <Typography variant="body1">{order.storeName}</Typography>
-                </Box>
-              </Box>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <CustomerIcon color="primary" />
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary">Customer</Typography>
-                  <Typography variant="body1">{order.customerName}</Typography>
-                </Box>
-              </Box>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <DateIcon color="primary" />
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary">Order Date</Typography>
-                  <Typography variant="body1">{order.dateTime}</Typography>
-                </Box>
-              </Box>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <PaymentIcon color="primary" />
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary">Payment Status</Typography>
-                  <Chip 
-                    label={order.paymentStatus} 
-                    color={order.paymentStatus === 'Paid' ? 'success' : 'error'} 
-                    size="small" 
-                  />
-                </Box>
-              </Box>
-            </Grid>
-          </Grid>
-
-          <Divider sx={{ my: 2 }} />
-
-          {/* Order Items */}
-          <Typography variant="h6" sx={{ mb: 2 }}>Order Items</Typography>
-          <List>
-            {order.items.map((item: OrderItem) => (
-              <ListItem key={item.id} sx={{ py: 2 }}>
-                <ListItemAvatar>
-                  <Avatar src={item.image} alt={item.name} />
-                </ListItemAvatar>
-                <ListItemText
-                  primary={item.name}
-                  secondary={`Quantity: ${item.quantity} | Price: $${item.price}`}
-                />
-                <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                  ${(item.price * item.quantity).toFixed(2)}
-                </Typography>
-              </ListItem>
-            ))}
-          </List>
-
-          <Divider sx={{ my: 2 }} />
-
-          {/* Order Summary */}
-          <Grid container spacing={2} sx={{ mt: 2 }}>
-            <Grid item xs={12} md={6}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                <Typography>Subtotal</Typography>
-                <Typography>${order.totalAmount.toFixed(2)}</Typography>
-              </Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                <Typography>Discount</Typography>
-                <Typography color="error">-${order.discount.toFixed(2)}</Typography>
-              </Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                <Typography>Shipping</Typography>
-                <Typography>$5.00</Typography>
-              </Box>
-              <Divider sx={{ my: 1 }} />
-              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Typography variant="h6">Total</Typography>
-                <Typography variant="h6">
-                  ${(order.totalAmount - order.discount + 5).toFixed(2)}
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                <ShippingIcon color="primary" />
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary">Shipping Address</Typography>
-                  <Typography variant="body1">
-                    123 Main St, Apt 4B<br />
-                    New York, NY 10001<br />
-                    United States
-                  </Typography>
-                </Box>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <PaymentIcon color="primary" />
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary">Payment Method</Typography>
-                  <Typography variant="body1">Credit Card (**** **** **** 1234)</Typography>
-                </Box>
-              </Box>
-            </Grid>
-          </Grid>
-        </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} startIcon={<CloseIcon />}>Close</Button>
-        <Button variant="contained" color="primary" startIcon={<EditIcon />}>
-          Edit Order
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-}
-
-export default function Orders() {
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [orders, setOrders] = useState<Order[]>(ordersData);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [viewDialogOpen, setViewDialogOpen] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-
-  useEffect(() => {
-    // Simulate loading data
-    setLoading(true);
-    try {
-      // In a real app, you would fetch data here
-      setLoading(false);
-    } catch (err) {
-      setError('Failed to load orders data');
-      setLoading(false);
-    }
-  }, []);
-
-  const handleChangePage = (event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  const handleViewClick = (order: Order) => {
-    setSelectedOrder(order);
-    setViewDialogOpen(true);
-  };
-
-  const handleEditClick = (order: Order) => {
-    // Implement edit functionality
-    console.log('Edit order:', order);
-  };
-
-  const handleDeleteClick = (orderId: number) => {
-    // Implement delete functionality
-    console.log('Delete order:', orderId);
-  };
-
-  return (
-    <Box sx={{ flexGrow: 1, p: 3 }}>
-      <Typography variant="h4" gutterBottom sx={{ mb: 3 }}>
-        Orders
-      </Typography>
-      
-      {/* Stats Cards Grid */}
-      <Box sx={{ 
-        display: 'grid',
-        gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr 1fr' },
-        gap: 3,
-        mb: 3
-      }}>
-        {stats.map((stat) => (
-          <StatsCard 
-            key={stat.title} 
-            title={stat.title} 
-            value={stat.value} 
-            change={stat.change}
-            icon={stat.icon} 
+    <>
+      <TableRow 
+        sx={{ 
+          '&:hover': { 
+            backgroundColor: '#f5f5f5',
+          },
+          transition: 'background-color 0.2s',
+          cursor: 'pointer'
+        }}
+        onClick={onExpand}
+      >
+        <TableCell>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <IconButton 
+              size="small" 
+              sx={{ 
+                mr: 1,
+                transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s'
+              }}
+            >
+              <KeyboardArrowDownIcon />
+            </IconButton>
+            {order.store}
+          </Box>
+        </TableCell>
+        <TableCell>{order.orderNo}</TableCell>
+        <TableCell>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {order.customer.name}
+            <IconButton size="small" sx={{ ml: 0.5 }}>
+              <ContentCopyIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+          </Box>
+        </TableCell>
+        <TableCell>
+          {order.discount !== '-' && (
+            <Chip
+              label={order.discount}
+              size="small"
+              sx={{
+                backgroundColor: '#e3f2fd',
+                color: '#1976d2',
+                borderRadius: '4px',
+                height: '24px',
+                fontWeight: 500
+              }}
+            />
+          )}
+          {order.discount === '-' && '-'}
+        </TableCell>
+        <TableCell>
+          <Chip
+            label={order.channel}
+            size="small"
+            sx={{
+              backgroundColor: '#fff3e0',
+              color: '#ed6c02',
+              borderRadius: '4px',
+              height: '24px',
+              fontWeight: 500
+            }}
           />
-        ))}
-      </Box>
+        </TableCell>
+        <TableCell>{order.paymentType}</TableCell>
+        <TableCell>{order.total}</TableCell>
+        <TableCell sx={{ whiteSpace: 'pre-line', color: 'text.secondary' }}>{order.dateTime}</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell colSpan={8} sx={{ p: 0, borderBottom: 'none' }}>
+          <Collapse in={expanded} timeout="auto" unmountOnExit>
+            <Box sx={{ 
+              py: 3, 
+              px: 4, 
+              backgroundColor: '#fafafa',
+              borderTop: '1px solid #e0e0e0',
+              borderBottom: '1px solid #e0e0e0'
+            }}>
+              <Grid container spacing={4}>
+                <Grid xs={4}>
+                  <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 500, color: '#1976d2' }}>
+                    Customer Information
+                  </Typography>
+                  <Stack spacing={2}>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">Email</Typography>
+                      <Typography variant="body1">{order.customer.email}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">Phone</Typography>
+                      <Typography variant="body1">{order.customer.phone}</Typography>
+                    </Box>
+                  </Stack>
+                </Grid>
+                <Grid xs={4}>
+                  <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 500, color: '#1976d2' }}>
+                    Shipping Information
+                  </Typography>
+                  <Stack spacing={2}>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">Method</Typography>
+                      <Typography variant="body1">{order.shipping.method}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">Address</Typography>
+                      <Typography variant="body1">{order.shipping.address}</Typography>
+                    </Box>
+                  </Stack>
+                </Grid>
+                <Grid xs={4}>
+                  <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 500, color: '#1976d2' }}>
+                    Payment Information
+                  </Typography>
+                  <Stack spacing={2}>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">Method</Typography>
+                      <Typography variant="body1">{order.payment.method}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">Subtotal</Typography>
+                      <Typography variant="body1">{order.payment.subtotal}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">Shipping</Typography>
+                      <Typography variant="body1">{order.payment.shipping}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">Tax</Typography>
+                      <Typography variant="body1">{order.payment.tax}</Typography>
+                    </Box>
+                  </Stack>
+                </Grid>
+              </Grid>
 
-      {/* Orders Table */}
-      <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-        <TableContainer>
-          <Table stickyHeader aria-label="orders table">
-            <TableHead>
-              <TableRow>
-                <TableCell>STORE</TableCell>
-                <TableCell>ORDER NO</TableCell>
-                <TableCell>CUSTOMER</TableCell>
-                <TableCell>VIEW ORDER</TableCell>
-                <TableCell>DISCOUNT</TableCell>
-                <TableCell>CHANNEL</TableCell>
-                <TableCell>TOTAL</TableCell>
-                <TableCell>DATE/TIME</TableCell>
-                <TableCell align="center">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={9} align="center">
-                    <CircularProgress />
-                  </TableCell>
-                </TableRow>
-              ) : error ? (
-                <TableRow>
-                  <TableCell colSpan={9} align="center">
-                    <Typography color="error">{error}</Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                orders
-                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((row) => (
-                    <TableRow
-                      key={row.id}
-                      hover
-                      sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                    >
-                      <TableCell>{row.storeName}</TableCell>
-                      <TableCell>{row.orderNumber}</TableCell>
-                      <TableCell>{row.customerName}</TableCell>
-                      <TableCell>
-                        <Button 
-                          size="small" 
-                          variant="text"
-                          sx={{ textTransform: 'none' }}
-                          onClick={() => handleViewClick(row)}
-                        >
-                          View
-                        </Button>
-                      </TableCell>
-                      <TableCell>${row.discount.toFixed(2)}</TableCell>
-                      <TableCell>Online</TableCell>
-                      <TableCell>${row.totalAmount.toFixed(2)}</TableCell>
-                      <TableCell>{row.dateTime}</TableCell>
-                      <TableCell align="center">
-                        <Stack direction="row" spacing={1} justifyContent="center">
-                          <Tooltip title="Edit">
-                            <IconButton size="small" onClick={() => handleEditClick(row)}>
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Delete">
-                            <IconButton size="small" onClick={() => handleDeleteClick(row.id)}>
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </Stack>
-                      </TableCell>
-                    </TableRow>
-                  ))
+              {order.items.length > 0 && (
+                <Box sx={{ mt: 4 }}>
+                  <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 500, color: '#1976d2' }}>
+                    Order Items
+                  </Typography>
+                  <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid #e0e0e0', borderRadius: 1 }}>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow sx={{ backgroundColor: '#fafafa' }}>
+                          <TableCell sx={{ fontWeight: 500 }}>Product</TableCell>
+                          <TableCell sx={{ fontWeight: 500 }}>Quantity</TableCell>
+                          <TableCell sx={{ fontWeight: 500 }}>Price</TableCell>
+                          <TableCell sx={{ fontWeight: 500 }}>Total</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {order.items.map((item, itemIndex) => (
+                          <TableRow key={itemIndex}>
+                            <TableCell>
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <Box
+                                  component="img"
+                                  src={item.image}
+                                  alt={item.name}
+                                  sx={{
+                                    width: 40,
+                                    height: 40,
+                                    objectFit: 'cover',
+                                    borderRadius: '4px',
+                                    border: '1px solid #e0e0e0',
+                                    mr: 2
+                                  }}
+                                />
+                                {item.name}
+                              </Box>
+                            </TableCell>
+                            <TableCell>{item.quantity}</TableCell>
+                            <TableCell>{item.price}</TableCell>
+                            <TableCell>{item.total}</TableCell>
+                          </TableRow>
+                        ))}
+                        <TableRow>
+                          <TableCell colSpan={3} align="right" sx={{ fontWeight: 500 }}>
+                            Total
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 500 }}>{order.total}</TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
               )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
-          component="div"
-          count={orders.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
-      </Paper>
-
-      {/* View Order Dialog */}
-      <ViewOrderDialog
-        open={viewDialogOpen}
-        onClose={() => setViewDialogOpen(false)}
-        order={selectedOrder}
-      />
-    </Box>
+            </Box>
+          </Collapse>
+        </TableCell>
+      </TableRow>
+    </>
   );
-} 
+};
+
+const Orders: React.FC = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedStore, setSelectedStore] = useState('');
+  const [selectedPayment, setSelectedPayment] = useState('');
+  const [selectedChannel, setSelectedChannel] = useState('');
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
+  const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+
+  // Filter orders based on search term and dropdown selections
+  const filteredOrders = useMemo(() => {
+    return mockOrders.filter(order => {
+      // Search filter
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = searchTerm === '' || 
+        order.orderNo.toLowerCase().includes(searchLower) ||
+        order.customer.name.toLowerCase().includes(searchLower) ||
+        order.customer.email.toLowerCase().includes(searchLower) ||
+        order.items.some(item => item.name.toLowerCase().includes(searchLower));
+
+      // Store filter
+      const matchesStore = selectedStore === '' || order.store === selectedStore;
+
+      // Payment filter
+      const matchesPayment = selectedPayment === '' || order.paymentType === selectedPayment;
+
+      // Channel filter
+      const matchesChannel = selectedChannel === '' || 
+        (selectedChannel === 'shopify' && order.channel === 'shopify_draft_order');
+
+      return matchesSearch && matchesStore && matchesPayment && matchesChannel;
+    });
+  }, [searchTerm, selectedStore, selectedPayment, selectedChannel]);
+
+  // Reset filters
+  const handleResetFilters = () => {
+    setSearchTerm('');
+    setSelectedStore('');
+    setSelectedPayment('');
+    setSelectedChannel('');
+  };
+
+  return (
+    <Layout>
+      <Box sx={{ p: 3 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          mb: 3,
+          borderBottom: '1px solid #e0e0e0',
+          pb: 2
+        }}>
+          <Typography variant="h4" sx={{ fontWeight: 500 }}>Orders</Typography>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={handleResetFilters}
+            sx={{
+              borderColor: '#e0e0e0',
+              color: 'text.secondary',
+              '&:hover': {
+                borderColor: '#1976d2',
+                backgroundColor: 'transparent'
+              }
+            }}
+          >
+            Reset Filters
+          </Button>
+        </Box>
+
+        {/* Filters Section */}
+        <Paper 
+          elevation={0}
+          sx={{ 
+            mb: 3, 
+            overflow: 'hidden',
+            border: '1px solid #e0e0e0',
+            borderRadius: 1
+          }}
+        >
+          <Box
+            sx={{
+              px: 2.5,
+              py: 2,
+              borderBottom: '1px solid #e0e0e0',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              cursor: 'pointer',
+              backgroundColor: '#fafafa'
+            }}
+            onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
+          >
+            <Typography sx={{ fontSize: '0.9375rem', fontWeight: 500, color: '#2f2f2f' }}>
+              Order Filters
+            </Typography>
+            <IconButton 
+              size="small"
+              sx={{
+                transform: isFiltersExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s'
+              }}
+            >
+              <ExpandMoreIcon fontSize="small" />
+            </IconButton>
+          </Box>
+
+          <Collapse in={isFiltersExpanded}>
+            <Box sx={{ p: 3 }}>
+              <Box sx={{ mb: 2.5 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  Search Orders
+                </Typography>
+                <TextField
+                  placeholder="Search by order #, customer, product..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  size="small"
+                  fullWidth
+                  sx={{ 
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '8px',
+                      backgroundColor: 'white',
+                      height: '40px',
+                      '&:hover fieldset': {
+                        borderColor: '#1976d2',
+                      },
+                    },
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon fontSize="small" color="action" />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Box>
+
+              <Grid container spacing={2.5}>
+                <Grid item xs={4} component={'div' as any}>
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Stores
+                    </Typography>
+                    <Select
+                      value={selectedStore}
+                      onChange={(e) => setSelectedStore(e.target.value)}
+                      displayEmpty
+                      fullWidth
+                      size="small"
+                      IconComponent={KeyboardArrowDownIcon}
+                      sx={{
+                        backgroundColor: 'white',
+                        borderRadius: '8px',
+                        height: '40px',
+                        '& .MuiSelect-select': {
+                          color: selectedStore ? 'inherit' : '#666'
+                        }
+                      }}
+                      renderValue={(selected) => {
+                        if (!selected) {
+                          return <span style={{ color: '#666' }}>Choose stores...</span>;
+                        }
+                        return selected;
+                      }}
+                      MenuProps={{
+                        PaperProps: {
+                          sx: {
+                            borderRadius: '8px',
+                            marginTop: '4px',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                          }
+                        }
+                      }}
+                    >
+                      <MenuItem value="" disabled>Choose stores...</MenuItem>
+                      <MenuItem value="beefje-dev">beefje-dev</MenuItem>
+                      <MenuItem value="bje-test">bje-test</MenuItem>
+                    </Select>
+                  </Box>
+                </Grid>
+
+                <Grid item xs={4} component={'div' as any}>
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Payment Methods
+                    </Typography>
+                    <Select
+                      value={selectedPayment}
+                      onChange={(e) => setSelectedPayment(e.target.value)}
+                      displayEmpty
+                      fullWidth
+                      size="small"
+                      IconComponent={KeyboardArrowDownIcon}
+                      sx={{
+                        backgroundColor: 'white',
+                        borderRadius: '8px',
+                        height: '40px',
+                        '& .MuiSelect-select': {
+                          color: selectedPayment ? 'inherit' : '#666'
+                        }
+                      }}
+                      renderValue={(selected) => {
+                        if (!selected) {
+                          return <span style={{ color: '#666' }}>Choose Payment Methods...</span>;
+                        }
+                        return selected;
+                      }}
+                      MenuProps={{
+                        PaperProps: {
+                          sx: {
+                            borderRadius: '8px',
+                            marginTop: '4px',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                          }
+                        }
+                      }}
+                    >
+                      <MenuItem value="" disabled>Choose Payment Methods...</MenuItem>
+                      <MenuItem value="manual">Manual</MenuItem>
+                    </Select>
+                  </Box>
+                </Grid>
+
+                <Grid item xs={4} component={'div' as any}>
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Sales Channels
+                    </Typography>
+                    <Select
+                      value={selectedChannel}
+                      onChange={(e) => setSelectedChannel(e.target.value)}
+                      displayEmpty
+                      fullWidth
+                      size="small"
+                      IconComponent={KeyboardArrowDownIcon}
+                      sx={{
+                        backgroundColor: 'white',
+                        borderRadius: '8px',
+                        height: '40px',
+                        '& .MuiSelect-select': {
+                          color: selectedChannel ? 'inherit' : '#666'
+                        }
+                      }}
+                      renderValue={(selected) => {
+                        if (!selected) {
+                          return <span style={{ color: '#666' }}>Choose Sales Channels...</span>;
+                        }
+                        return selected;
+                      }}
+                      MenuProps={{
+                        PaperProps: {
+                          sx: {
+                            borderRadius: '8px',
+                            marginTop: '4px',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                          }
+                        }
+                      }}
+                    >
+                      <MenuItem value="" disabled>Choose Sales Channels...</MenuItem>
+                      <MenuItem value="shopify">Shopify Draft Order</MenuItem>
+                    </Select>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Box>
+          </Collapse>
+        </Paper>
+
+        {/* Orders Table */}
+        <Paper 
+          elevation={0}
+          sx={{ 
+            border: '1px solid #e0e0e0',
+            borderRadius: 2,
+            overflow: 'hidden'
+          }}
+        >
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow sx={{ backgroundColor: '#fafafa' }}>
+                  <TableCell sx={{ fontWeight: 500 }}>Store</TableCell>
+                  <TableCell sx={{ fontWeight: 500 }}>Order No</TableCell>
+                  <TableCell sx={{ fontWeight: 500 }}>Customer</TableCell>
+                  <TableCell sx={{ fontWeight: 500 }}>Discount</TableCell>
+                  <TableCell sx={{ fontWeight: 500 }}>Channel</TableCell>
+                  <TableCell sx={{ fontWeight: 500 }}>Payment Type</TableCell>
+                  <TableCell sx={{ fontWeight: 500 }}>Total</TableCell>
+                  <TableCell sx={{ fontWeight: 500 }}>Date/Time</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredOrders.map((order) => (
+                  <ExpandableRow
+                    key={order.orderNo}
+                    order={order}
+                    expanded={expandedOrder === order.orderNo}
+                    onExpand={() => setExpandedOrder(
+                      expandedOrder === order.orderNo ? null : order.orderNo
+                    )}
+                  />
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+
+        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="body2" color="text.secondary">
+            Showing {filteredOrders.length} of {mockOrders.length} orders
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Button 
+              disabled 
+              variant="outlined" 
+              size="small"
+              sx={{
+                borderColor: '#e0e0e0',
+                '&.Mui-disabled': {
+                  borderColor: '#e0e0e0',
+                }
+              }}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="contained"
+              size="small"
+              sx={{ 
+                minWidth: '40px', 
+                backgroundColor: '#1976d2',
+                '&:hover': {
+                  backgroundColor: '#1565c0',
+                }
+              }}
+            >
+              1
+            </Button>
+            <Button 
+              disabled 
+              variant="outlined" 
+              size="small"
+              sx={{
+                borderColor: '#e0e0e0',
+                '&.Mui-disabled': {
+                  borderColor: '#e0e0e0',
+                }
+              }}
+            >
+              Next
+            </Button>
+          </Box>
+        </Box>
+      </Box>
+    </Layout>
+  );
+};
+
+export default Orders; 

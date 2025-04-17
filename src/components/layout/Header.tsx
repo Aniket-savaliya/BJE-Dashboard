@@ -1,43 +1,38 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   AppBar,
   Toolbar,
-  Typography,
   IconButton,
-  Badge,
   Box,
+  Avatar,
   Menu,
   MenuItem,
   ListItemIcon,
-  ListItemText
+  Divider,
+  useTheme,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
-  Notifications as NotificationsIcon,
-  ShoppingCart as ShoppingCartIcon,
-  WarningAmber as WarningIcon,
+  Person as PersonIcon,
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
   drawerWidth: number;
   handleSidebarToggle: () => void;
 }
 
-const notifications = [
-  { id: 1, icon: <ShoppingCartIcon fontSize="small" />, title: 'New Order #ORD12352', time: '5 min ago' },
-  { id: 2, icon: <WarningIcon fontSize="small" />, title: 'Low Stock: Hickory Smoked Beef', time: '1 hour ago' },
-  { id: 3, icon: <ShoppingCartIcon fontSize="small" />, title: 'New Order #ORD12351', time: '2 hours ago' },
-];
-
-export default function Header({ handleSidebarToggle, drawerWidth }: HeaderProps) {
+const Header: React.FC<HeaderProps> = ({ drawerWidth, handleSidebarToggle }) => {
+  const theme = useTheme();
+  const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const isMenuOpen = Boolean(anchorEl);
 
-  const handleNotificationClick = (event: React.MouseEvent<HTMLElement>) => {
+  const handleProfileClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
 
-  const handleNotificationClose = () => {
+  const handleMenuClose = () => {
     setAnchorEl(null);
   };
 
@@ -45,7 +40,13 @@ export default function Header({ handleSidebarToggle, drawerWidth }: HeaderProps
     <AppBar 
       position="fixed" 
       sx={{ 
-        zIndex: (theme) => theme.zIndex.drawer + 1,
+        width: { sm: `calc(100% - ${drawerWidth}px)` },
+        ml: { sm: `${drawerWidth}px` },
+        zIndex: theme.zIndex.drawer + 1,
+        backdropFilter: 'blur(10px)',
+        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+        boxShadow: 'none',
+        borderBottom: '1px solid rgba(0, 0, 0, 0.1)'
       }}
     >
       <Toolbar>
@@ -54,63 +55,50 @@ export default function Header({ handleSidebarToggle, drawerWidth }: HeaderProps
           aria-label="open drawer"
           edge="start"
           onClick={handleSidebarToggle}
-          sx={{ mr: 2 }}
+          sx={{ mr: 2, display: { sm: 'none' } }}
         >
           <MenuIcon />
         </IconButton>
-
-        <Typography
-          variant="h6"
-          noWrap
-          component="div"
-          sx={{ display: { xs: 'none', sm: 'block' } }}
-        >
-          BJE Dashboard
-        </Typography>
-        
         <Box sx={{ flexGrow: 1 }} />
-        <Box sx={{ display: 'flex' }}>
-          <IconButton 
-            size="large" 
-            color="inherit"
-            aria-label={`show ${notifications.length} new notifications`}
-            onClick={handleNotificationClick}
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <IconButton
+            onClick={handleProfileClick}
+            size="small"
+            sx={{ ml: 2 }}
+            aria-controls={Boolean(anchorEl) ? 'account-menu' : undefined}
+            aria-haspopup="true"
+            aria-expanded={Boolean(anchorEl) ? 'true' : undefined}
           >
-            <Badge badgeContent={notifications.length} color="error">
-              <NotificationsIcon />
-            </Badge>
+            <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
+              <PersonIcon />
+            </Avatar>
           </IconButton>
+          <Menu
+            anchorEl={anchorEl}
+            id="account-menu"
+            open={Boolean(anchorEl)}
+            onClose={handleMenuClose}
+            onClick={handleMenuClose}
+            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+          >
+            <MenuItem>
+              <ListItemIcon>
+                <PersonIcon fontSize="small" />
+              </ListItemIcon>
+              Profile
+            </MenuItem>
+            <MenuItem onClick={() => navigate('/settings')}>
+              <ListItemIcon>
+                <SettingsIcon fontSize="small" />
+              </ListItemIcon>
+              Settings
+            </MenuItem>
+          </Menu>
         </Box>
       </Toolbar>
-
-      <Menu
-        anchorEl={anchorEl}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
-        keepMounted
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        open={isMenuOpen}
-        onClose={handleNotificationClose}
-      >
-        {notifications.map((notification) => (
-          <MenuItem key={notification.id} onClick={handleNotificationClose}>
-            <ListItemIcon>
-              {notification.icon}
-            </ListItemIcon>
-            <ListItemText 
-              primary={notification.title}
-              secondary={notification.time}
-              primaryTypographyProps={{ variant: 'body2' }}
-              secondaryTypographyProps={{ variant: 'caption' }}
-            />
-          </MenuItem>
-        ))}
-      </Menu>
     </AppBar>
   );
-} 
+};
+
+export default Header;
