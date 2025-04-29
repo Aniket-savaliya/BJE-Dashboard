@@ -134,7 +134,7 @@ const Settings: React.FC = () => {
 
         <Grid container spacing={4}>
           {/* Profile Settings */}
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6} component={'div' as any}>
             <Paper 
               elevation={0}
               sx={{ 
@@ -195,7 +195,7 @@ const Settings: React.FC = () => {
           </Grid>
 
           {/* Notification & Display Settings */}
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6} component={'div' as any}>
             <Stack spacing={3}>
               {/* Notification Settings */}
               <Paper 
