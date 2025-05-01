@@ -545,7 +545,7 @@ const Products: React.FC = () => {
         </Box>
 
         {/* Filters Section */}
-        <Paper 
+        {/* <Paper 
           elevation={0}
           sx={{ 
             mb: 3, 
@@ -567,10 +567,10 @@ const Products: React.FC = () => {
             }}
           >
             <Typography sx={{ fontSize: '0.9375rem', fontWeight: 500, color: '#2f2f2f' }}>
-              Product Filters
+              Product Filter
             </Typography>
           </Box>
-        </Paper>
+        </Paper> */}
 
         {/* Delete Confirmation Dialog */}
         <Dialog
