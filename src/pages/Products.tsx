@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -28,6 +28,8 @@ import {
   DialogContent,
   DialogActions,
   DialogContentText,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import Layout from '../components/layout/Layout';
 import SearchIcon from '@mui/icons-material/Search';
@@ -35,7 +37,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 // import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-// import AddIcon from '@mui/icons-material/Add';
+import AddIcon from '@mui/icons-material/Add';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -43,70 +45,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 // import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 // import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 // import { format } from 'date-fns';
-
-interface Product {
-  id: string;
-  image: string;
-  name: string;
-  sku: string;
-  category: string;
-  price: string;
-  stock: number;
-  status: 'active' | 'draft' | 'archived';
-}
-
-const mockProducts: Product[] = [
-  {
-    id: '1',
-    image: 'https://beefjerkyx.com/themes/custom/bjov2/images/2022/bje-logo-oval-small.png',
-    name: 'Original Beef Jerky - Large Pack',
-    sku: 'BJ-ORI-001',
-    category: 'Original Flavors',
-    price: '$24.99',
-    stock: 150,
-    status: 'active',
-  },
-  {
-    id: '2',
-    image: 'https://beefjerkyx.com/themes/custom/bjov2/images/2022/bje-logo-oval-small.png',
-    name: 'Spicy Buffalo Wings Jerky',
-    sku: 'BJ-SPY-002',
-    category: 'Spicy Flavors',
-    price: '$29.97',
-    stock: 85,
-    status: 'active',
-  },
-  {
-    id: '3',
-    image: 'https://beefjerkyx.com/themes/custom/bjov2/images/2022/bje-logo-oval-small.png',
-    name: 'Teriyaki Beef Jerky Bundle',
-    sku: 'BJ-TER-003',
-    category: 'Bundles',
-    price: '$35.30',
-    stock: 42,
-    status: 'active',
-  },
-  {
-    id: '4',
-    image: 'https://beefjerkyx.com/themes/custom/bjov2/images/2022/bje-logo-oval-small.png',
-    name: 'Premium Jerky Gift Box',
-    sku: 'BJ-GFT-004',
-    category: 'Gift Sets',
-    price: '$99.95',
-    stock: 25,
-    status: 'active',
-  },
-  {
-    id: '5',
-    image: 'https://beefjerkyx.com/themes/custom/bjov2/images/2022/bje-logo-oval-small.png',
-    name: 'Honey BBQ Beef Jerky',
-    sku: 'BJ-BBQ-005',
-    category: 'Sweet Flavors',
-    price: '$37.45',
-    stock: 0,
-    status: 'draft',
-  }
-];
+import { productApi, Product } from '../api/productApi';
 
 interface ExpandableRowProps {
   product: Product;
@@ -123,26 +62,6 @@ const ExpandableRow: React.FC<ExpandableRowProps> = ({
   onEdit,
   onDelete 
 }) => {
-  const getStatusColor = (status: Product['status']) => {
-    switch (status) {
-      case 'active':
-        return {
-          color: '#2e7d32',
-          backgroundColor: '#e8f5e9'
-        };
-      case 'draft':
-        return {
-          color: '#ed6c02',
-          backgroundColor: '#fff3e0'
-        };
-      case 'archived':
-        return {
-          color: '#d32f2f',
-          backgroundColor: '#ffebee'
-        };
-    }
-  };
-
   const getStockColor = (stock: number) => {
     if (stock === 0) return '#d32f2f';
     if (stock < 50) return '#ed6c02';
@@ -205,19 +124,6 @@ const ExpandableRow: React.FC<ExpandableRowProps> = ({
           >
             {product.stock} units
           </Typography>
-        </TableCell>
-        <TableCell>
-          <Chip
-            label={product.status}
-            size="small"
-            sx={{
-              ...getStatusColor(product.status),
-              textTransform: 'capitalize',
-              fontWeight: 500,
-              borderRadius: '4px',
-              height: '24px'
-            }}
-          />
         </TableCell>
         <TableCell>
           <IconButton 
@@ -295,20 +201,6 @@ const ExpandableRow: React.FC<ExpandableRowProps> = ({
                       <Typography variant="body1">{product.price}</Typography>
                     </Box>
                     <Box>
-                      <Typography variant="body2" color="text.secondary">Stock Status</Typography>
-                      <Chip
-                        label={product.status}
-                        size="small"
-                        sx={{
-                          ...getStatusColor(product.status),
-                          textTransform: 'capitalize',
-                          fontWeight: 500,
-                          borderRadius: '4px',
-                          height: '24px'
-                        }}
-                      />
-                    </Box>
-                    <Box>
                       <Typography variant="body2" color="text.secondary">Available Quantity</Typography>
                       <Typography variant="body1">{product.stock} units</Typography>
                     </Box>
@@ -361,59 +253,206 @@ const ExpandableRow: React.FC<ExpandableRowProps> = ({
   );
 };
 
+interface ProductFormData {
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  image: string;
+  stock: number;
+  sku: string;
+}
+
+type CreateProductData = Omit<Product, '_id'>;
+
 const Products: React.FC = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedStore, setSelectedStore] = useState('');
-  const [selectedCollection, setSelectedCollection] = useState('');
-  const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
-  const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
-  const [products, setProducts] = useState<Product[]>(mockProducts);
-  
-  // Dialog states
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
-  const [editFormData, setEditFormData] = useState<Partial<Product>>({});
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [newProduct, setNewProduct] = useState<CreateProductData>({
+    name: '',
+    description: '',
+    price: 0,
+    category: '',
+    image: '',
+    stock: 0,
+    sku: ''
+  });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [editFormData, setEditFormData] = useState<ProductFormData>({
+    name: '',
+    description: '',
+    price: 0,
+    category: '',
+    image: '',
+    stock: 0,
+    sku: ''
+  });
+  const [formErrors, setFormErrors] = useState<Partial<Record<keyof ProductFormData, string>>>({});
+
+  // Fetch products on component mount
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const data = await productApi.getAllProducts();
+      setProducts(data);
+      setError(null);
+    } catch (err) {
+      setError('Failed to fetch products. Please try again later.');
+      console.error('Error fetching products:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateClick = () => {
+    setNewProduct({
+      name: '',
+      description: '',
+      price: 0,
+      category: '',
+      image: '',
+      stock: 0,
+      sku: ''
+    });
+    setFormErrors({});
+    setCreateDialogOpen(true);
+  };
+
+  const handleCreateSave = async () => {
+    if (!validateForm(newProduct)) {
+      return;
+    }
+
+    try {
+      const createdProduct = await productApi.createProduct(newProduct);
+      setProducts([...products, createdProduct]);
+      setCreateDialogOpen(false);
+      setSuccessMessage('Product created successfully');
+    } catch (err) {
+      if (err.response?.data?.message?.includes('duplicate')) {
+        setError('SKU already exists. Please use a unique SKU.');
+      } else {
+        setError('Failed to create product. Please try again.');
+      }
+      console.error('Error creating product:', err);
+    }
+  };
 
   const handleDeleteClick = (product: Product) => {
     setProductToDelete(product);
     setDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (productToDelete) {
-      setProducts(products.filter(p => p.id !== productToDelete.id));
-      setDeleteDialogOpen(false);
-      setProductToDelete(null);
+      try {
+        await productApi.deleteProduct(productToDelete._id);
+        setProducts(products.filter(p => p._id !== productToDelete._id));
+        setDeleteDialogOpen(false);
+        setProductToDelete(null);
+        setSuccessMessage('Product deleted successfully');
+      } catch (err) {
+        setError('Failed to delete product. Please try again.');
+        console.error('Error deleting product:', err);
+      }
     }
+  };
+
+  const validateForm = (data: CreateProductData | ProductFormData): boolean => {
+    const errors: Partial<Record<keyof ProductFormData, string>> = {};
+    
+    if (!data.name.trim()) {
+      errors.name = 'Name is required';
+    }
+    if (!data.description.trim()) {
+      errors.description = 'Description is required';
+    }
+    if (data.price <= 0) {
+      errors.price = 'Price must be greater than 0';
+    }
+    if (!data.category.trim()) {
+      errors.category = 'Category is required';
+    }
+    if (data.stock < 0) {
+      errors.stock = 'Stock cannot be negative';
+    }
+    if (!data.sku || !data.sku.trim()) {
+      errors.sku = 'SKU is required';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleEditClick = (product: Product) => {
     setProductToEdit(product);
-    setEditFormData(product);
+    setEditFormData({
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      category: product.category,
+      image: product.image,
+      stock: product.stock,
+      sku: product.sku || ''
+    });
+    setFormErrors({});
     setEditDialogOpen(true);
   };
 
-  const handleEditSave = () => {
-    if (productToEdit && editFormData) {
-      setProducts(products.map(p => 
-        p.id === productToEdit.id ? { ...p, ...editFormData } : p
-      ));
+  const handleEditSave = async () => {
+    if (!productToEdit) return;
+
+    if (!validateForm(editFormData)) {
+      return;
+    }
+
+    try {
+      const updatedProduct = await productApi.updateProduct(productToEdit._id, editFormData);
+      setProducts(products.map(p => p._id === updatedProduct._id ? updatedProduct : p));
       setEditDialogOpen(false);
       setProductToEdit(null);
-      setEditFormData({});
+      setSuccessMessage('Product updated successfully');
+    } catch (err) {
+      setError('Failed to update product. Please try again.');
+      console.error('Error updating product:', err);
     }
   };
 
+  // Filter products based on search term and category
   const filteredProducts = products.filter(product => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      product.name.toLowerCase().includes(searchLower) ||
-      product.sku.toLowerCase().includes(searchLower) ||
-      product.category.toLowerCase().includes(searchLower)
-    );
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
+    return matchesSearch && matchesCategory;
   });
+
+  const handleCloseSnackbar = () => {
+    setError(null);
+    setSuccessMessage(null);
+  };
+
+  if (loading) {
+    return (
+      <Layout>
+        <Box sx={{ p: 3, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+          <Typography>Loading products...</Typography>
+        </Box>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -426,6 +465,13 @@ const Products: React.FC = () => {
           pb: 2
         }}>
           <Typography variant="h5" sx={{ fontWeight: 500, color: '#1a1a1a' }}>Products</Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleCreateClick}
+          >
+            Create Product
+          </Button>
         </Box>
 
         {/* Statistics Cards */}
@@ -519,129 +565,11 @@ const Products: React.FC = () => {
               cursor: 'pointer',
               backgroundColor: '#fafafa'
             }}
-            onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
           >
             <Typography sx={{ fontSize: '0.9375rem', fontWeight: 500, color: '#2f2f2f' }}>
               Product Filters
             </Typography>
-            <IconButton 
-              size="small"
-              sx={{
-                transform: isFiltersExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                transition: 'transform 0.2s'
-              }}
-            >
-              <ExpandMoreIcon fontSize="small" />
-            </IconButton>
           </Box>
-
-          <Collapse in={isFiltersExpanded}>
-            <Box sx={{ p: 2.5 }}>
-              <Stack direction="row" spacing={2}>
-                <TextField
-                  placeholder="Search Products"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  size="small"
-                  sx={{ 
-                    flex: 1,
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: '8px',
-                      '&:hover fieldset': {
-                        borderColor: '#1976d2',
-                      },
-                    },
-                  }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon fontSize="small" color="action" />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-                <FormControl variant="outlined" size="small" sx={{ minWidth: 200 }}>
-                  <Select
-                    value={selectedStore}
-                    onChange={(e) => setSelectedStore(e.target.value)}
-                    displayEmpty
-                    IconComponent={KeyboardArrowDownIcon}
-                    sx={{
-                      backgroundColor: 'white',
-                      borderRadius: '8px',
-                      height: '40px',
-                      '& .MuiSelect-select': {
-                        py: 1,
-                        color: selectedStore ? 'inherit' : '#666',
-                        '&.Mui-focused': {
-                          backgroundColor: 'transparent'
-                        }
-                      }
-                    }}
-                    renderValue={(selected) => {
-                      if (!selected) {
-                        return <span style={{ color: '#666' }}>Choose stores...</span>;
-                      }
-                      return selected;
-                    }}
-                    MenuProps={{
-                      PaperProps: {
-                        sx: {
-                          borderRadius: '8px',
-                          marginTop: '4px',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                        }
-                      }
-                    }}
-                  >
-                    <MenuItem value="" disabled>Choose stores...</MenuItem>
-                    <MenuItem value="bje-test">bje-test</MenuItem>
-                    <MenuItem value="bje-paymore">bje-paymore</MenuItem>
-                  </Select>
-                </FormControl>
-                <FormControl variant="outlined" size="small" sx={{ minWidth: 200 }}>
-                  <Select
-                    value={selectedCollection}
-                    onChange={(e) => setSelectedCollection(e.target.value)}
-                    displayEmpty
-                    IconComponent={KeyboardArrowDownIcon}
-                    sx={{
-                      backgroundColor: 'white',
-                      borderRadius: '8px',
-                      height: '40px',
-                      '& .MuiSelect-select': {
-                        py: 1,
-                        color: selectedCollection ? 'inherit' : '#666',
-                        '&.Mui-focused': {
-                          backgroundColor: 'transparent'
-                        }
-                      }
-                    }}
-                    renderValue={(selected) => {
-                      if (!selected) {
-                        return <span style={{ color: '#666' }}>Choose collections...</span>;
-                      }
-                      return selected;
-                    }}
-                    MenuProps={{
-                      PaperProps: {
-                        sx: {
-                          borderRadius: '8px',
-                          marginTop: '4px',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                        }
-                      }
-                    }}
-                  >
-                    <MenuItem value="" disabled>Choose collections...</MenuItem>
-                    <MenuItem value="snacks">Snacks</MenuItem>
-                    <MenuItem value="jerky">Jerky</MenuItem>
-                    <MenuItem value="popcorn">Popcorn</MenuItem>
-                  </Select>
-                </FormControl>
-              </Stack>
-            </Box>
-          </Collapse>
         </Paper>
 
         {/* Delete Confirmation Dialog */}
@@ -689,80 +617,167 @@ const Products: React.FC = () => {
         <Dialog
           open={editDialogOpen}
           onClose={() => setEditDialogOpen(false)}
-          aria-labelledby="edit-dialog-title"
           maxWidth="sm"
           fullWidth
         >
-          <DialogTitle id="edit-dialog-title" sx={{ pb: 1 }}>
-            Edit Product
-          </DialogTitle>
+          <DialogTitle>Edit Product</DialogTitle>
           <DialogContent>
-            <Stack spacing={2} sx={{ mt: 1 }}>
+            <Box sx={{ mt: 2 }}>
               <TextField
-                label="Product Name"
                 fullWidth
-                value={editFormData.name || ''}
+                label="Name"
+                value={editFormData.name}
                 onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                error={!!formErrors.name}
+                helperText={formErrors.name}
+                sx={{ mb: 2 }}
               />
               <TextField
-                label="SKU"
                 fullWidth
-                value={editFormData.sku || ''}
-                onChange={(e) => setEditFormData({ ...editFormData, sku: e.target.value })}
+                label="Description"
+                value={editFormData.description}
+                onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                error={!!formErrors.description}
+                helperText={formErrors.description}
+                sx={{ mb: 2 }}
               />
               <TextField
-                label="Category"
                 fullWidth
-                value={editFormData.category || ''}
-                onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })}
-              />
-              <TextField
                 label="Price"
-                fullWidth
-                value={editFormData.price || ''}
-                onChange={(e) => setEditFormData({ ...editFormData, price: e.target.value })}
+                type="number"
+                value={editFormData.price}
+                onChange={(e) => setEditFormData({ ...editFormData, price: Number(e.target.value) })}
+                error={!!formErrors.price}
+                helperText={formErrors.price}
+                sx={{ mb: 2 }}
               />
               <TextField
+                fullWidth
                 label="Stock"
                 type="number"
-                fullWidth
-                value={editFormData.stock || ''}
-                onChange={(e) => setEditFormData({ ...editFormData, stock: parseInt(e.target.value) })}
+                value={editFormData.stock}
+                onChange={(e) => setEditFormData({ ...editFormData, stock: Number(e.target.value) })}
+                error={!!formErrors.stock}
+                helperText={formErrors.stock}
+                sx={{ mb: 2 }}
               />
-              <FormControl fullWidth>
-                <Select
-                  value={editFormData.status || 'active'}
-                  onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value as Product['status'] })}
-                >
-                  <MenuItem value="active">Active</MenuItem>
-                  <MenuItem value="draft">Draft</MenuItem>
-                  <MenuItem value="archived">Archived</MenuItem>
-                </Select>
-              </FormControl>
-            </Stack>
+              <TextField
+                fullWidth
+                label="Category"
+                value={editFormData.category}
+                onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })}
+                error={!!formErrors.category}
+                helperText={formErrors.category}
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                label="Image URL"
+                value={editFormData.image}
+                onChange={(e) => setEditFormData({ ...editFormData, image: e.target.value })}
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                label="SKU"
+                value={editFormData.sku}
+                onChange={(e) => setEditFormData({ ...editFormData, sku: e.target.value })}
+                error={!!formErrors.sku}
+                helperText={formErrors.sku}
+                sx={{ mb: 2 }}
+              />
+            </Box>
           </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button 
-              onClick={() => setEditDialogOpen(false)}
-              variant="outlined"
-              sx={{ 
-                borderColor: '#e0e0e0',
-                color: 'text.secondary',
-                '&:hover': {
-                  borderColor: '#1976d2',
-                  backgroundColor: 'transparent'
-                }
-              }}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleEditSave}
-              variant="contained"
-              sx={{ ml: 1 }}
-            >
-              Save Changes
-            </Button>
+          <DialogActions>
+            <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleEditSave} variant="contained">Save</Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Create Product Dialog */}
+        <Dialog
+          open={createDialogOpen}
+          onClose={() => setCreateDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Create New Product</DialogTitle>
+          <DialogContent>
+            <Box sx={{ mt: 2 }}>
+              <TextField
+                fullWidth
+                label="Name"
+                value={newProduct.name}
+                onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                error={!!formErrors.name}
+                helperText={formErrors.name}
+                required
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                label="Description"
+                value={newProduct.description}
+                onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                error={!!formErrors.description}
+                helperText={formErrors.description}
+                required
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                label="SKU"
+                value={newProduct.sku}
+                onChange={(e) => setNewProduct({ ...newProduct, sku: e.target.value })}
+                error={!!formErrors.sku}
+                helperText={formErrors.sku}
+                required
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                label="Price"
+                type="number"
+                value={newProduct.price}
+                onChange={(e) => setNewProduct({ ...newProduct, price: Number(e.target.value) })}
+                error={!!formErrors.price}
+                helperText={formErrors.price}
+                required
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                label="Stock"
+                type="number"
+                value={newProduct.stock}
+                onChange={(e) => setNewProduct({ ...newProduct, stock: Number(e.target.value) })}
+                error={!!formErrors.stock}
+                helperText={formErrors.stock}
+                required
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                label="Category"
+                value={newProduct.category}
+                onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+                error={!!formErrors.category}
+                helperText={formErrors.category}
+                required
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                label="Image URL"
+                value={newProduct.image}
+                onChange={(e) => setNewProduct({ ...newProduct, image: e.target.value })}
+                sx={{ mb: 2 }}
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreateSave} variant="contained">Create</Button>
           </DialogActions>
         </Dialog>
 
@@ -785,19 +800,16 @@ const Products: React.FC = () => {
                   <TableCell sx={{ py: 1.5, fontSize: '0.875rem', fontWeight: 500, color: '#2f2f2f' }}>Category</TableCell>
                   <TableCell sx={{ py: 1.5, fontSize: '0.875rem', fontWeight: 500, color: '#2f2f2f' }}>Price</TableCell>
                   <TableCell sx={{ py: 1.5, fontSize: '0.875rem', fontWeight: 500, color: '#2f2f2f' }}>Stock</TableCell>
-                  <TableCell sx={{ py: 1.5, fontSize: '0.875rem', fontWeight: 500, color: '#2f2f2f' }}>Status</TableCell>
                   <TableCell sx={{ py: 1.5, fontSize: '0.875rem', fontWeight: 500, color: '#2f2f2f' }}>Action</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {filteredProducts.map((product) => (
                   <ExpandableRow
-                    key={product.id}
+                    key={product._id}
                     product={product}
-                    expanded={expandedProduct === product.id}
-                    onExpand={() => setExpandedProduct(
-                      expandedProduct === product.id ? null : product.id
-                    )}
+                    expanded={expandedProductId === product._id}
+                    onExpand={() => setExpandedProductId(expandedProductId === product._id ? null : product._id)}
                     onEdit={() => handleEditClick(product)}
                     onDelete={() => handleDeleteClick(product)}
                   />
@@ -806,6 +818,21 @@ const Products: React.FC = () => {
             </Table>
           </TableContainer>
         </Paper>
+
+        {/* Snackbar for notifications */}
+        <Snackbar
+          open={!!error || !!successMessage}
+          autoHideDuration={6000}
+          onClose={handleCloseSnackbar}
+        >
+          <Alert
+            onClose={handleCloseSnackbar}
+            severity={error ? 'error' : 'success'}
+            sx={{ width: '100%' }}
+          >
+            {error || successMessage}
+          </Alert>
+        </Snackbar>
       </Box>
     </Layout>
   );
