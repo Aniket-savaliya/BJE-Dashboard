@@ -29,7 +29,7 @@ interface SidebarProps {
 // Updated menu items
 const menuItems = [
   { text: 'Products', icon: <ProductsIcon />, path: '/products' },
-  { text: 'Orders', icon: <OrdersIcon />, path: '/' },
+  { text: 'Orders', icon: <OrdersIcon />, path: '/Orders' },
   { text: 'Sales', icon: <SalesIcon />, path: '/sales' },
   { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
 ];
