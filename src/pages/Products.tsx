@@ -30,6 +30,7 @@ import {
   DialogContentText,
   Snackbar,
   Alert,
+  TablePagination,
 } from '@mui/material';
 import Layout from '../components/layout/Layout';
 import SearchIcon from '@mui/icons-material/Search';
@@ -297,6 +298,8 @@ const Products: React.FC = () => {
     sku: ''
   });
   const [formErrors, setFormErrors] = useState<Partial<Record<keyof ProductFormData, string>>>({});
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
   // Fetch products on component mount
   useEffect(() => {
@@ -439,6 +442,15 @@ const Products: React.FC = () => {
     return matchesSearch && matchesCategory;
   });
 
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
   const handleCloseSnackbar = () => {
     setError(null);
     setSuccessMessage(null);
@@ -506,7 +518,7 @@ const Products: React.FC = () => {
             </Box>
             <Box>
               <Typography color="textSecondary" variant="body2" sx={{ mb: 0.5, fontSize: '0.8125rem' }}>Total Products</Typography>
-              <Typography variant="h5" sx={{ fontWeight: 600, fontSize: '1.5rem', lineHeight: 1.2 }}>18</Typography>
+              <Typography variant="h5" sx={{ fontWeight: 600, fontSize: '1.5rem', lineHeight: 1.2 }}>{products.length}</Typography>
             </Box>
           </Paper>
           <Paper 
@@ -539,7 +551,7 @@ const Products: React.FC = () => {
             </Box>
             <Box>
               <Typography color="textSecondary" variant="body2" sx={{ mb: 0.5, fontSize: '0.8125rem' }}>Total Price Updated</Typography>
-              <Typography variant="h5" sx={{ fontWeight: 600, fontSize: '1.5rem', lineHeight: 1.2 }}>2</Typography>
+              <Typography variant="h5" sx={{ fontWeight: 600, fontSize: '1.5rem', lineHeight: 1.2 }}>{products.filter(product => product.price > 0).length}</Typography>
             </Box>
           </Paper>
         </Box>
@@ -804,19 +816,44 @@ const Products: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredProducts.map((product) => (
-                  <ExpandableRow
-                    key={product._id}
-                    product={product}
-                    expanded={expandedProductId === product._id}
-                    onExpand={() => setExpandedProductId(expandedProductId === product._id ? null : product._id)}
-                    onEdit={() => handleEditClick(product)}
-                    onDelete={() => handleDeleteClick(product)}
-                  />
-                ))}
+                {filteredProducts
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((product) => (
+                    <ExpandableRow
+                      key={product._id}
+                      product={product}
+                      expanded={expandedProductId === product._id}
+                      onExpand={() => setExpandedProductId(expandedProductId === product._id ? null : product._id)}
+                      onEdit={() => handleEditClick(product)}
+                      onDelete={() => handleDeleteClick(product)}
+                    />
+                  ))}
               </TableBody>
             </Table>
           </TableContainer>
+          <TablePagination
+            rowsPerPageOptions={[5, 10, 25, 50]}
+            component="div"
+            count={filteredProducts.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            sx={{
+              borderTop: '1px solid #e0e0e0',
+              '& .MuiTablePagination-selectLabel': {
+                fontSize: '0.875rem',
+                color: '#2f2f2f'
+              },
+              '& .MuiTablePagination-displayedRows': {
+                fontSize: '0.875rem',
+                color: '#2f2f2f'
+              },
+              '& .MuiTablePagination-select': {
+                fontSize: '0.875rem'
+              }
+            }}
+          />
         </Paper>
 
         {/* Snackbar for notifications */}
