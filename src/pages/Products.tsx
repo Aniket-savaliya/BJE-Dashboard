@@ -301,11 +301,6 @@ const Products: React.FC = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
-  // Fetch products on component mount
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
   const fetchProducts = async () => {
     try {
       setLoading(true);
@@ -319,6 +314,13 @@ const Products: React.FC = () => {
       setLoading(false);
     }
   };
+  
+  // Fetch products on component mount
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+ 
 
   const handleCreateClick = () => {
     setNewProduct({
