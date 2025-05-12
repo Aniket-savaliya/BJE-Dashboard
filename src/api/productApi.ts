@@ -12,6 +12,7 @@ export interface Product {
   stock: number;
   status?: 'active' | 'draft' | 'archived';
   sku: string;
+  variants?: { live?: boolean; [key: string]: any }[];
 }
 
 export const productApi = {

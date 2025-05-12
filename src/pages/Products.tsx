@@ -42,6 +42,7 @@ import AddIcon from '@mui/icons-material/Add';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import CloseIcon from '@mui/icons-material/Close';
 // import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 // import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 // import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -54,6 +55,7 @@ interface ExpandableRowProps {
   onExpand: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onVariantClick: (product: Product) => void;
 }
 
 const ExpandableRow: React.FC<ExpandableRowProps> = ({ 
@@ -61,7 +63,8 @@ const ExpandableRow: React.FC<ExpandableRowProps> = ({
   expanded, 
   onExpand,
   onEdit,
-  onDelete 
+  onDelete,
+  onVariantClick
 }) => {
   const getStockColor = (stock: number) => {
     if (stock === 0) return '#d32f2f';
@@ -109,7 +112,41 @@ const ExpandableRow: React.FC<ExpandableRowProps> = ({
         </TableCell>
         <TableCell>{product.name}</TableCell>
         <TableCell>{product.sku}</TableCell>
-        <TableCell>{product.category}</TableCell>
+        <TableCell>
+          {/* Show real variant count if available, else mock */}
+          {(() => {
+            const liveVariants = product.variants ? (product.variants.filter(v => v.live !== false).length) : null;
+            const variantCount = liveVariants !== null ? liveVariants : (product.sku.length % 4); // fallback mock
+            if (variantCount === 0) {
+              return (
+                <span style={{ color: '#9e9e9e', fontWeight: 500, fontSize: '0.97rem' }}>No variants</span>
+              );
+            } else {
+              return (
+                <span
+                  style={{
+                    color: '#1976d2',
+                    fontWeight: 500,
+                    fontSize: '0.97rem',
+                    cursor: 'pointer',
+                    background: '#e3f2fd',
+                    borderRadius: 999,
+                    padding: '4px 16px',
+                    display: 'inline-block',
+                    lineHeight: 1.6,
+                    transition: 'background 0.2s',
+                    boxShadow: '0 1px 2px rgba(25, 118, 210, 0.04)',
+                  }}
+                  onMouseOver={e => e.currentTarget.style.background = '#bbdefb'}
+                  onMouseOut={e => e.currentTarget.style.background = '#e3f2fd'}
+                  onClick={e => { e.stopPropagation(); onVariantClick(product); }}
+                >
+                  {variantCount} variant{variantCount > 1 ? 's' : ''} <span style={{fontSize:'1.1em',marginLeft:2,verticalAlign:'middle'}}>&#8594;</span>
+                </span>
+              );
+            }
+          })()}
+        </TableCell>
         <TableCell>
           <Typography variant="body2" fontWeight={500}>
             {product.price}
@@ -300,14 +337,39 @@ const Products: React.FC = () => {
   const [formErrors, setFormErrors] = useState<Partial<Record<keyof ProductFormData, string>>>({});
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [variantModalOpen, setVariantModalOpen] = useState(false);
+  const [variantProduct, setVariantProduct] = useState<Product | null>(null);
 
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const data = await productApi.getAllProducts();
+      let data = await productApi.getAllProducts();
+      // Add dummy variants if missing, with randomization
+      function getRandomVariants(product: Product, idx: number) {
+        const variantCount = 2 + (idx % 3); // 2, 3, or 4 variants
+        const colors = ['White', 'Black', 'Red', 'Blue', 'Green'];
+        const sizes = ['S', 'M', 'L', 'XL'];
+        return Array.from({ length: variantCount }).map((_, vIdx) => {
+          const color = colors[(idx + vIdx) % colors.length];
+          const size = sizes[(vIdx) % sizes.length];
+          return {
+            image: product.image,
+            price: (product.price + (vIdx * 2) - 1).toFixed(2),
+            title: `${size} / ${color}`,
+            sku: `${size}-${color}-${product.sku || idx}`,
+            stock: 3 + ((idx + vIdx) % 10),
+            barcode: '-',
+            live: true
+          };
+        });
+      }
+      data = data.map((product, idx) => ({
+        ...product,
+        variants: product.variants && product.variants.length > 0 ? product.variants : getRandomVariants(product, idx)
+      }));
       setProducts(data);
       setError(null);
-    } catch (err) {
+    } catch (err: any) {
       setError('Failed to fetch products. Please try again later.');
       console.error('Error fetching products:', err);
     } finally {
@@ -319,8 +381,6 @@ const Products: React.FC = () => {
   useEffect(() => {
     fetchProducts();
   }, []);
-
- 
 
   const handleCreateClick = () => {
     setNewProduct({
@@ -401,7 +461,7 @@ const Products: React.FC = () => {
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
-
+ 
   const handleEditClick = (product: Product) => {
     setProductToEdit(product);
     setEditFormData({
@@ -456,6 +516,11 @@ const Products: React.FC = () => {
   const handleCloseSnackbar = () => {
     setError(null);
     setSuccessMessage(null);
+  };
+
+  const handleVariantClick = (product: Product) => {
+    setVariantProduct(product);
+    setVariantModalOpen(true);
   };
 
   if (loading) {
@@ -795,6 +860,71 @@ const Products: React.FC = () => {
           </DialogActions>
         </Dialog>
 
+        {/* Product Variants Modal */}
+        <Dialog
+          open={variantModalOpen}
+          onClose={() => setVariantModalOpen(false)}
+          maxWidth="md"
+          fullWidth
+          PaperProps={{
+            sx: { borderRadius: '14px', p: 0, overflow: 'visible' }
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, pt: 3, pb: 0 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.35rem' }}>Product Variants</Typography>
+            <IconButton onClick={() => setVariantModalOpen(false)}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+          <DialogContent sx={{ pt: 1, pb: 2, px: 3 }}>
+            <Box sx={{ mt: 2, border: '1px solid #e3e6ef', borderRadius: 2, overflow: 'hidden' }}>
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow sx={{ background: '#f8fafc' }}>
+                      <TableCell sx={{ fontWeight: 600, color: '#222', width: 40 }}>#</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: '#222' }}>Image</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: '#222' }}>Price</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: '#222' }}>Title</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: '#222' }}>SKU</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: '#222' }}>Stock</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: '#222' }}>Barcode</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: '#222' }}>Action</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {(variantProduct?.variants && variantProduct.variants.length > 0 ? variantProduct.variants : []).map((variant, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell>{idx + 1}</TableCell>
+                        <TableCell>
+                          <Box component="img" src={variant.image || variantProduct?.image} alt="variant" sx={{ width: 48, height: 48, borderRadius: 1, objectFit: 'cover', border: '1px solid #e0e0e0' }} />
+                        </TableCell>
+                        <TableCell>{variant.price ?? '-'}</TableCell>
+                        <TableCell>{variant.title ?? '-'}</TableCell>
+                        <TableCell>{variant.sku ?? '-'}</TableCell>
+                        <TableCell>{variant.stock ?? '-'}</TableCell>
+                        <TableCell>{variant.barcode ?? '-'}</TableCell>
+                        <TableCell>
+                          <IconButton size="small">
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {(!variantProduct?.variants || variantProduct.variants.length === 0) && (
+                      <TableRow>
+                        <TableCell colSpan={8} align="center" sx={{ color: '#888', py: 4 }}>
+                          No variants found.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          </DialogContent>
+        </Dialog>
+
         {/* Products Table */}
         <Paper 
           elevation={0}
@@ -811,7 +941,7 @@ const Products: React.FC = () => {
                   <TableCell sx={{ py: 1.5, fontSize: '0.875rem', fontWeight: 500, color: '#2f2f2f' }}>Image</TableCell>
                   <TableCell sx={{ py: 1.5, fontSize: '0.875rem', fontWeight: 500, color: '#2f2f2f' }}>Product</TableCell>
                   <TableCell sx={{ py: 1.5, fontSize: '0.875rem', fontWeight: 500, color: '#2f2f2f' }}>SKU</TableCell>
-                  <TableCell sx={{ py: 1.5, fontSize: '0.875rem', fontWeight: 500, color: '#2f2f2f' }}>Category</TableCell>
+                  <TableCell sx={{ py: 1.5, fontSize: '0.875rem', fontWeight: 500, color: '#2f2f2f' }}>Variant</TableCell>
                   <TableCell sx={{ py: 1.5, fontSize: '0.875rem', fontWeight: 500, color: '#2f2f2f' }}>Price</TableCell>
                   <TableCell sx={{ py: 1.5, fontSize: '0.875rem', fontWeight: 500, color: '#2f2f2f' }}>Stock</TableCell>
                   <TableCell sx={{ py: 1.5, fontSize: '0.875rem', fontWeight: 500, color: '#2f2f2f' }}>Action</TableCell>
@@ -828,6 +958,7 @@ const Products: React.FC = () => {
                       onExpand={() => setExpandedProductId(expandedProductId === product._id ? null : product._id)}
                       onEdit={() => handleEditClick(product)}
                       onDelete={() => handleDeleteClick(product)}
+                      onVariantClick={handleVariantClick}
                     />
                   ))}
               </TableBody>
