@@ -4,6 +4,7 @@ import { CustomThemeProvider } from './context/ThemeContext';
 import Products from './pages/Products';
 import Orders from './pages/Orders';
 import Settings from './pages/Settings';
+import ProductManagement from './pages/ProductManagement';
 
 const App: React.FC = () => {
   return (
@@ -11,6 +12,7 @@ const App: React.FC = () => {
       <Router>
         <Routes>
           <Route path="/products" element={<Products />} />
+          <Route path="/product-management" element={<ProductManagement />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/" element={<Orders />} />

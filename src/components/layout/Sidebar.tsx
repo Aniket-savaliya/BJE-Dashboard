@@ -17,6 +17,7 @@ import {
   ReceiptLong as OrdersIcon,
   PointOfSale as SalesIcon,
   Settings as SettingsIcon,
+  AcUnitSharp as ProductManagment,
 } from '@mui/icons-material';
 import { useState } from 'react';
 
@@ -29,6 +30,7 @@ interface SidebarProps {
 // Updated menu items
 const menuItems = [
   { text: 'Products', icon: <ProductsIcon />, path: '/products' },
+  { text: 'Product Management', icon: <ProductManagment />, path: '/product-management' },
   { text: 'Orders', icon: <OrdersIcon />, path: '/Orders' },
   { text: 'Sales', icon: <SalesIcon />, path: '/sales' },
   { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
