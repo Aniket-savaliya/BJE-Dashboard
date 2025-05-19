@@ -1,7 +1,8 @@
 import React, { useRef, useState } from 'react';
 import {
-  Box, Paper, Typography, InputBase, Popper, List, ListItem, Checkbox, ListItemText, ClickAwayListener, IconButton, Button, Stack, Divider, ListItemButton, Chip, TextField, MenuItem
+  Box, Paper, Typography, InputBase, Popper, List, ListItem, Checkbox, ListItemText, ClickAwayListener, IconButton, Button, Stack, Divider, ListItemButton, Chip, TextField, MenuItem, Select, FormControl, InputLabel
 } from '@mui/material';
+import Autocomplete from '@mui/material/Autocomplete';
 import Layout from '../components/layout/Layout';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
@@ -14,6 +15,11 @@ const DUMMY_PRODUCTS = [
     vendor: 'BJE Premium',
     status: 'active',
     tags: ['Beef', 'Classic', 'Traditional'],
+    image: '/logo.png',
+    variants: [
+      { title: '4oz', sku: 'BJ-CLA-4', price: '14.99', cost: '8.5', stock: '45', weight: '113', grams: 'g', barcode: 'BJ-CLA-4' },
+      { title: '8oz', sku: 'BJ-CLA-8', price: '25.99', cost: '15', stock: '30', weight: '227', grams: 'g', barcode: 'BJ-CLA-8' },
+    ],
   },
   {
     id: 'p2',
@@ -21,6 +27,8 @@ const DUMMY_PRODUCTS = [
     vendor: 'BJE Premium',
     status: 'active',
     tags: ['Beef', 'Spicy', 'Teriyaki'],
+    image: '/logo.png',
+    variants: [], // No variants
   },
   {
     id: 'p3',
@@ -28,6 +36,10 @@ const DUMMY_PRODUCTS = [
     vendor: 'BJE Premium',
     status: 'active',
     tags: ['Beef', 'Gift Box', 'Sampler'],
+    image: '/logo.png',
+    variants: [
+      { title: 'Sampler', sku: 'BJ-GIFT-1', price: '19.99', cost: '10', stock: '20', weight: '150', grams: 'g', barcode: 'BJ-GIFT-1' },
+    ],
   },
   {
     id: 'p4',
@@ -35,6 +47,10 @@ const DUMMY_PRODUCTS = [
     vendor: 'BJE Premium',
     status: 'active',
     tags: ['Beef', 'Honey Garlic', 'Sweet'],
+    image: '/logo.png',
+    variants: [
+      { title: '4oz', sku: 'BJ-HON-4', price: '14.99', cost: '8.5', stock: '40', weight: '113', grams: 'g', barcode: 'BJ-HON-4' },
+    ],
   },
   {
     id: 'p5',
@@ -42,6 +58,11 @@ const DUMMY_PRODUCTS = [
     vendor: 'BJE Premium',
     status: 'active',
     tags: ['Beef', 'Peppered', 'Spicy'],
+    image: '/logo.png',
+    variants: [
+      { title: '4oz', sku: 'BJ-PEP-4', price: '14.99', cost: '8.5', stock: '45', weight: '113', grams: 'g', barcode: 'BJ-PEP-4' },
+      { title: '8oz', sku: 'BJ-PEP-8', price: '25.99', cost: '15', stock: '30', weight: '227', grams: 'g', barcode: 'BJ-PEP-8' },
+    ],
   },
 ];
 
@@ -60,6 +81,79 @@ const FILTERS = {
   status: ['All Status', 'Active', 'Inactive'],
   vendor: ['All Vendors', 'BJE Premium', 'Other Vendor'],
   tags: ['Filter by tags', 'Beef', 'Spicy', 'Classic', 'Gift Box', 'Sampler', 'Sweet', 'Peppered', 'Teriyaki'],
+};
+
+const SelectedProductsSection = ({ products }: { products: typeof DUMMY_PRODUCTS }) => {
+  if (!products.length) return null;
+  return (
+    <Box sx={{ mt: 3, mb: 2 }}>
+      <Paper elevation={0} sx={{ border: '1px solid #e0e0e0', borderRadius: '12px', p: 3, background: '#fff', boxShadow: 'none' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2.5 }}>
+          <Inventory2Icon sx={{ color: '#222', fontSize: 28, mr: 1 }} />
+          <Typography sx={{ fontWeight: 700, fontSize: '1.25rem' }}>Selected Products</Typography>
+          <Box sx={{ ml: 'auto', fontWeight: 500, fontSize: '1rem', color: '#222', background: '#f6f7fa', px: 2, py: 0.5, borderRadius: 2 }}>
+            {products.length} product{products.length > 1 ? 's' : ''} selected
+          </Box>
+        </Box>
+        {products.map((product) => (
+          <Box key={product.id} sx={{ mb: 3 }}>
+            {/* Product Details Section */}
+            <Box sx={{ border: '2px solid #e0e0e0', borderRadius: '10px', background: '#fff', p: 2.5, mb: 2, display: 'flex', alignItems: 'flex-start' }}>
+              <Box component="img" src="https://beefjerkyx.com/themes/custom/bjov2/images/2022/bje-logo-oval-small.png" alt="Product" sx={{ width: 90, height: 60, borderRadius: 1,  objectFit: 'cover', mr: 3 }} />
+              <Box sx={{ flex: 1 }}>
+                <TextField label="Title" value={product.title} size="small" fullWidth InputProps={{ readOnly: true }} sx={{ mb: 1.5, background: '#fff' }} InputLabelProps={{ sx: { fontSize: '0.98rem' } }} />
+                <Box sx={{ display: 'flex', gap: 2, mb: 1.5 }}>
+                  <TextField label="Vendor" value={product.vendor} size="small" fullWidth InputProps={{ readOnly: true }} sx={{ flex: 1, background: '#fff' }} InputLabelProps={{ sx: { fontSize: '0.98rem' } }} />
+                  <TextField label="Status" value={product.status.charAt(0).toUpperCase() + product.status.slice(1)} size="small" fullWidth InputProps={{ readOnly: true }} sx={{ flex: 1, background: '#fff' }} InputLabelProps={{ sx: { fontSize: '0.98rem' } }} />
+                  <TextField label="Type" value="Physical" size="small" fullWidth InputProps={{ readOnly: true }} sx={{ flex: 1, background: '#fff' }} InputLabelProps={{ sx: { fontSize: '0.98rem' } }} />
+                </Box>
+                <TextField label="Tags" value={product.tags.join(', ')} size="small" fullWidth InputProps={{ readOnly: true }} sx={{ mb: 0, background: '#fff' }} InputLabelProps={{ sx: { fontSize: '0.98rem' } }} />
+              </Box>
+            </Box>
+            {/* Variants Section */}
+            <Box sx={{ border: '2px solid #e0e0e0', borderRadius: '10px', background: '#fff', p: 2.5, position: 'relative' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <Typography sx={{ fontWeight: 600, fontSize: '1rem' }}>Variants</Typography>
+                {product.variants && product.variants.length > 0 && (
+                  <Box sx={{ ml: 'auto', fontSize: '0.98rem', color: '#222', background: '#f6f7fa', px: 1.5, py: 0.2, borderRadius: 2, fontWeight: 500 }}>
+                    {product.variants.length} variant{product.variants.length > 1 ? 's' : ''}
+                  </Box>
+                )}
+              </Box>
+              <Box sx={{ background: '#f8fafc', borderRadius: '10px', p: 2, minHeight: 90 }}>
+                {product.variants && product.variants.length > 0 ? (
+                  <Box sx={{ display: 'flex', gap: 3 }}>
+                    {product.variants.map((variant, idx) => (
+                      <Box key={variant.sku + idx} sx={{ flex: 1, background: '#fff', border: '1px solid #e0e0e0', borderRadius: '8px', p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        <Box sx={{ display: 'flex', gap: 2, mb: 1 }}>
+                          <TextField label="Title" value={variant.title} size="small" fullWidth InputProps={{ readOnly: true }} InputLabelProps={{ sx: { fontSize: '0.98rem' } }} />
+                        </Box>
+                        <Box sx={{ display: 'flex', gap: 2, mb: 1 }}>
+                          <TextField label="SKU" value={variant.sku} size="small" fullWidth InputProps={{ readOnly: true }} InputLabelProps={{ sx: { fontSize: '0.98rem' } }} />
+                        </Box>
+                        <Box sx={{ display: 'flex', gap: 2, mb: 1 }}>
+                          <TextField label="Price" value={variant.price} size="small" fullWidth InputProps={{ readOnly: true }} InputLabelProps={{ sx: { fontSize: '0.98rem' } }} />
+                          <TextField label="Cost" value={variant.cost} size="small" fullWidth InputProps={{ readOnly: true }} InputLabelProps={{ sx: { fontSize: '0.98rem' } }} />
+                        </Box>
+                        <Box sx={{ display: 'flex', gap: 2, mb: 1 }}>
+                          <TextField label="Stock" value={variant.stock} size="small" fullWidth InputProps={{ readOnly: true }} InputLabelProps={{ sx: { fontSize: '0.98rem' } }} />
+                          <TextField label="Weight" value={variant.weight} size="small" fullWidth InputProps={{ readOnly: true }} InputLabelProps={{ sx: { fontSize: '0.98rem' } }} />
+                          <TextField label="Grams (g)" value={variant.grams} size="small" fullWidth InputProps={{ readOnly: true }} InputLabelProps={{ sx: { fontSize: '0.98rem' } }} />
+                        </Box>
+                        <TextField label="Barcode" value={variant.barcode} size="small" fullWidth InputProps={{ readOnly: true }} InputLabelProps={{ sx: { fontSize: '0.98rem' } }} />
+                      </Box>
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography sx={{ color: '#888', fontSize: '1rem', fontStyle: 'italic', mt: 1, mb: 1, textAlign: 'center' }}>No Variant In This Product</Typography>
+                )}
+              </Box>
+            </Box>
+          </Box>
+        ))}
+      </Paper>
+    </Box>
+  );
 };
 
 const ProductManagement: React.FC = () => {
@@ -128,12 +222,12 @@ const ProductManagement: React.FC = () => {
             mx: 'auto',
           }}
         >
-          <Typography variant="h6" sx={{ fontWeight: 700, color: '#222', mb: 3 }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: '#222', mb: 1 }}>
             Product Management
           </Typography>
 
           {/* Side by side sections */}
-          <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+          <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }} id="product-filters-section">
             {/* Section 1: Select Products to Update */}
             <Paper
               elevation={0}
@@ -145,7 +239,7 @@ const ProductManagement: React.FC = () => {
                 border: '1px solid #e0e0e0',
                 borderRadius: '12px',
                 background: '#fff',
-                mb: 2,
+                mb: 1,
                 position: 'relative',
               }}
             >
@@ -217,34 +311,91 @@ const ProductManagement: React.FC = () => {
                             sx={{ fontSize: '1rem', width: '100%' }}
                           />
                         </Box>
-                        <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-                          <TextField
-                            select
-                            size="small"
+                        <Stack direction="row" spacing={1.5} sx={{ mb: 1, alignItems: 'center', px: 0.5 }}>
+                          <Autocomplete
+                            disablePortal
+                            disableClearable
+                            options={FILTERS.status}
                             value={productStatus}
-                            onChange={e => setProductStatus(e.target.value)}
-                            sx={{ minWidth: 120, background: '#f6f7fa', borderRadius: 1 }}
-                          >
-                            {FILTERS.status.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
-                          </TextField>
-                          <TextField
-                            select
-                            size="small"
+                            onChange={(e, newValue) => setProductStatus(newValue || 'All Status')}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                placeholder="All Status"
+                                size="small"
+                                variant="outlined"
+                                sx={{
+                                  minWidth: 100,
+                                  background: '#f6f7fa',
+                                  borderRadius: 1.5,
+                                  '.MuiOutlinedInput-root': {
+                                    px: 1.2,
+                                    py: 0.2,
+                                    fontSize: '0.98rem',
+                                    height: 36,
+                                  },
+                                }}
+                                InputProps={{ ...params.InputProps, style: { paddingRight: 32 } }}
+                              />
+                            )}
+                            sx={{ minWidth: 120 }}
+                          />
+                          <Autocomplete
+                            disablePortal
+                            disableClearable
+                            options={FILTERS.vendor}
                             value={productVendor}
-                            onChange={e => setProductVendor(e.target.value)}
-                            sx={{ minWidth: 120, background: '#f6f7fa', borderRadius: 1 }}
-                          >
-                            {FILTERS.vendor.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
-                          </TextField>
-                          <TextField
-                            select
-                            size="small"
+                            onChange={(e, newValue) => setProductVendor(newValue || 'All Vendors')}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                placeholder="All Vendors"
+                                size="small"
+                                variant="outlined"
+                                sx={{
+                                  minWidth: 130,
+                                  background: '#f6f7fa',
+                                  borderRadius: 1.5,
+                                  '.MuiOutlinedInput-root': {
+                                    px: 1.2,
+                                    py: 0.2,
+                                    fontSize: '0.98rem',
+                                    height: 36,
+                                  },
+                                }}
+                                InputProps={{ ...params.InputProps, style: { paddingRight: 32 } }}
+                              />
+                            )}
+                            sx={{ minWidth: 130 }}
+                          />
+                          <Autocomplete
+                            disablePortal
+                            disableClearable
+                            options={FILTERS.tags}
                             value={productTag}
-                            onChange={e => setProductTag(e.target.value)}
-                            sx={{ minWidth: 140, background: '#f6f7fa', borderRadius: 1 }}
-                          >
-                            {FILTERS.tags.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
-                          </TextField>
+                            onChange={(e, newValue) => setProductTag(newValue || 'Filter by tags')}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                placeholder="Filter by tags"
+                                size="small"
+                                variant="outlined"
+                                sx={{
+                                  minWidth: 150,
+                                  background: '#f6f7fa',
+                                  borderRadius: 1.5,
+                                  '.MuiOutlinedInput-root': {
+                                    px: 1.2,
+                                    py: 0.2,
+                                    fontSize: '0.98rem',
+                                    height: 36,
+                                  },
+                                }}
+                                InputProps={{ ...params.InputProps, style: { paddingRight: 32 } }}
+                              />
+                            )}
+                            sx={{ minWidth: 150 }}
+                          />
                         </Stack>
                         <Divider sx={{ my: 1 }} />
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
@@ -296,7 +447,6 @@ const ProductManagement: React.FC = () => {
                 </Popper>
               </Box>
             </Paper>
-
             {/* Section 2: Update Products Across Stores */}
             <Paper
               elevation={0}
@@ -428,10 +578,12 @@ const ProductManagement: React.FC = () => {
               </Box>
             </Paper>
           </Box>
+          {/* Render SelectedProductsSection below both sections, not inside either */}
+          <SelectedProductsSection products={DUMMY_PRODUCTS.filter(p => selectedProducts.includes(p.id))} />
         </Paper>
       </Box>
     </Layout>
   );
 };
 
-export default ProductManagement; 
+export default ProductManagement;
