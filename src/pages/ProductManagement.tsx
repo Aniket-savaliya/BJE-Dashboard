@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   Box, Paper, Typography, InputBase, Popper, List, ListItem, Checkbox, ListItemText, ClickAwayListener, IconButton, Button, Stack, Divider, ListItemButton, Chip, TextField, MenuItem, Select, FormControl, InputLabel
 } from '@mui/material';
@@ -13,7 +13,7 @@ const DUMMY_PRODUCTS = [
     id: 'p1',
     title: 'Classic Beef Jerky',
     vendor: 'BJE Premium',
-    status: 'active',
+    status: 'Active',
     tags: ['Beef', 'Classic', 'Traditional'],
     image: '/logo.png',
     variants: [
@@ -25,7 +25,7 @@ const DUMMY_PRODUCTS = [
     id: 'p2',
     title: 'Spicy Teriyaki Beef Jerky',
     vendor: 'BJE Premium',
-    status: 'active',
+    status: 'Active',
     tags: ['Beef', 'Spicy', 'Teriyaki'],
     image: '/logo.png',
     variants: [], // No variants
@@ -34,7 +34,7 @@ const DUMMY_PRODUCTS = [
     id: 'p3',
     title: 'Gift Box - Jerky Sampler',
     vendor: 'BJE Premium',
-    status: 'active',
+    status: 'Active',
     tags: ['Beef', 'Gift Box', 'Sampler'],
     image: '/logo.png',
     variants: [
@@ -45,7 +45,7 @@ const DUMMY_PRODUCTS = [
     id: 'p4',
     title: 'Honey Garlic Beef Jerky',
     vendor: 'BJE Premium',
-    status: 'active',
+    status: 'Active',
     tags: ['Beef', 'Honey Garlic', 'Sweet'],
     image: '/logo.png',
     variants: [
@@ -56,7 +56,7 @@ const DUMMY_PRODUCTS = [
     id: 'p5',
     title: 'Peppered Beef Jerky',
     vendor: 'BJE Premium',
-    status: 'active',
+    status: 'Active',
     tags: ['Beef', 'Peppered', 'Spicy'],
     image: '/logo.png',
     variants: [
@@ -85,15 +85,111 @@ const FILTERS = {
 
 const SelectedProductsSection = ({ products }: { products: typeof DUMMY_PRODUCTS }) => {
   const [page, setPage] = useState(0);
+  const [editedProducts, setEditedProducts] = useState<typeof DUMMY_PRODUCTS>([]);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const itemsPerPage = 2;
+
+  // Initialize edited products when products prop changes
+  useEffect(() => {
+    setEditedProducts(products);
+  }, [products]);
+
+  // Add warning when refreshing with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges]);
+
+  const handleFieldChange = (productId: string, field: string, value: string | string[]) => {
+    setEditedProducts(prev => prev.map(product => {
+      if (product.id === productId) {
+        if (field === 'tags') {
+          return { ...product, [field]: value as string[] };
+        }
+        return { ...product, [field]: value as string };
+      }
+      return product;
+    }));
+    setHasUnsavedChanges(true);
+  };
+
+  const handleVariantChange = (productId: string, variantIndex: number, field: string, value: string) => {
+    setEditedProducts(prev => prev.map(product => {
+      if (product.id === productId) {
+        const updatedVariants = [...product.variants];
+        updatedVariants[variantIndex] = { ...updatedVariants[variantIndex], [field]: value };
+        return { ...product, variants: updatedVariants };
+      }
+      return product;
+    }));
+    setHasUnsavedChanges(true);
+  };
+
+  const handleSave = () => {
+    // Here you would typically make an API call to save the changes
+    setHasUnsavedChanges(false);
+    // Update the original products with edited values
+    products.forEach((product, index) => {
+      Object.assign(product, editedProducts[index]);
+    });
+  };
+
+  const handleDiscard = () => {
+    setEditedProducts(products);
+    setHasUnsavedChanges(false);
+  };
 
   if (!products.length) return null;
 
   const totalPages = Math.ceil(products.length / itemsPerPage);
-  const displayedProducts = products.slice(page * itemsPerPage, (page + 1) * itemsPerPage);
+  const displayedProducts = editedProducts.slice(page * itemsPerPage, (page + 1) * itemsPerPage);
 
   return (
     <Box sx={{ mt: 1.5, mb: 1 }}>
+      {hasUnsavedChanges && (
+        <Box sx={{ 
+          mb: 1, 
+          p: 1, 
+          bgcolor: '#fff3cd', 
+          border: '1px solid #ffeeba',
+          borderRadius: '4px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <Typography sx={{ color: '#856404', fontSize: '0.9rem' }}>
+            You have unsaved changes. Please save or discard your changes.
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={handleDiscard}
+              sx={{ borderColor: '#856404', color: '#856404' }}
+            >
+              Discard
+            </Button>
+            <Button
+              size="small"
+              variant="contained"
+              onClick={handleSave}
+              sx={{ bgcolor: '#856404', '&:hover': { bgcolor: '#6d5204' } }}
+            >
+              Save Changes
+            </Button>
+          </Box>
+        </Box>
+      )}
       <Paper elevation={0} sx={{ border: '1px solid #e0e0e0', borderRadius: '12px', p: 2, background: '#fff', boxShadow: 'none' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
           <Inventory2Icon sx={{ color: '#222', fontSize: 24, mr: 1 }} />
@@ -185,11 +281,65 @@ const SelectedProductsSection = ({ products }: { products: typeof DUMMY_PRODUCTS
               gap: 1.5,
               boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
             }}>
+              {/* Title Field */}
+              <TextField 
+                label="Title" 
+                value={product.title} 
+                size="small" 
+                fullWidth 
+                sx={{ background: '#fff' }} 
+                InputLabelProps={{ sx: { fontSize: '0.95rem' } }} 
+              />
+
+              {/* First Row: Vendor, Status, Type */}
               <Box sx={{ display: 'flex', gap: 1.5 }}>
-                <TextField label="Vendor" value={product.vendor} size="small" fullWidth InputProps={{ readOnly: true }} sx={{ flex: 1, background: '#fff' }} InputLabelProps={{ sx: { fontSize: '0.95rem' } }} />
-                <TextField label="Status" value={product.status.charAt(0).toUpperCase() + product.status.slice(1)} size="small" fullWidth InputProps={{ readOnly: true }} sx={{ flex: 1, background: '#fff' }} InputLabelProps={{ sx: { fontSize: '0.95rem' } }} />
-                <TextField label="Type" value="Physical" size="small" fullWidth InputProps={{ readOnly: true }} sx={{ flex: 1, background: '#fff' }} InputLabelProps={{ sx: { fontSize: '0.95rem' } }} />
+                <FormControl fullWidth size="small">
+                  <InputLabel sx={{ fontSize: '0.95rem' }}>Vendor</InputLabel>
+                  <Select
+                    value={product.vendor}
+                    label="Vendor"
+                    sx={{ background: '#fff' }}
+                  >
+                    <MenuItem value="BJE Premium">BJE Premium</MenuItem>
+                    <MenuItem value="Other Vendor">Other Vendor</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <FormControl fullWidth size="small">
+                  <InputLabel sx={{ fontSize: '0.95rem' }}>Status</InputLabel>
+                  <Select
+                    value={product.status}
+                    label="Status"
+                    onChange={(e) => handleFieldChange(product.id, 'status', e.target.value)}
+                  >
+                    <MenuItem value="Active">Active</MenuItem>
+                    <MenuItem value="inactive">Inactive</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <FormControl fullWidth size="small">
+                  <InputLabel sx={{ fontSize: '0.95rem' }}>Type</InputLabel>
+                  <Select
+                    value="Physical"
+                    label="Type"
+                    sx={{ background: '#fff' }}
+                  >
+                    <MenuItem value="Physical">Physical</MenuItem>
+                    <MenuItem value="Digital">Digital</MenuItem>
+                  </Select>
+                </FormControl>
               </Box>
+
+              {/* Second Row: Tags */}
+              <TextField 
+                label="Tags" 
+                value={product.tags.join(', ')} 
+                size="small" 
+                fullWidth 
+                sx={{ background: '#fff' }} 
+                InputLabelProps={{ sx: { fontSize: '0.95rem' } }} 
+                onChange={(e) => handleFieldChange(product.id, 'tags', e.target.value.split(',').map(tag => tag.trim()))}
+              />
 
               {/* Variants Section */}
               <Box sx={{ 
@@ -220,21 +370,51 @@ const SelectedProductsSection = ({ products }: { products: typeof DUMMY_PRODUCTS
                         gap: 0.5,
                       }}>
                         <Box sx={{ display: 'flex', gap: 1.5, mb: 0.5 }}>
-                          <TextField label="Title" value={variant.title} size="small" fullWidth InputProps={{ readOnly: true }} InputLabelProps={{ sx: { fontSize: '0.95rem' } }} />
+                          <TextField label="Title" value={variant.title} size="small" fullWidth InputProps={{ readOnly: true }} />
                         </Box>
                         <Box sx={{ display: 'flex', gap: 1.5, mb: 0.5 }}>
-                          <TextField label="SKU" value={variant.sku} size="small" fullWidth InputProps={{ readOnly: true }} InputLabelProps={{ sx: { fontSize: '0.95rem' } }} />
+                          <TextField label="SKU" value={variant.sku} size="small" fullWidth InputProps={{ readOnly: true }} />
                         </Box>
                         <Box sx={{ display: 'flex', gap: 1.5, mb: 0.5 }}>
-                          <TextField label="Price" value={variant.price} size="small" fullWidth InputProps={{ readOnly: true }} InputLabelProps={{ sx: { fontSize: '0.95rem' } }} />
-                          <TextField label="Cost" value={variant.cost} size="small" fullWidth InputProps={{ readOnly: true }} InputLabelProps={{ sx: { fontSize: '0.95rem' } }} />
+                          <TextField 
+                            label="Price" 
+                            value={variant.price} 
+                            size="small" 
+                            fullWidth 
+                            onChange={(e) => handleVariantChange(product.id, idx, 'price', e.target.value)}
+                          />
+                          <TextField 
+                            label="Cost" 
+                            value={variant.cost} 
+                            size="small" 
+                            fullWidth 
+                            onChange={(e) => handleVariantChange(product.id, idx, 'cost', e.target.value)}
+                          />
                         </Box>
                         <Box sx={{ display: 'flex', gap: 1.5, mb: 0.5 }}>
-                          <TextField label="Stock" value={variant.stock} size="small" fullWidth InputProps={{ readOnly: true }} InputLabelProps={{ sx: { fontSize: '0.95rem' } }} />
-                          <TextField label="Weight" value={variant.weight} size="small" fullWidth InputProps={{ readOnly: true }} InputLabelProps={{ sx: { fontSize: '0.95rem' } }} />
-                          <TextField label="Grams (g)" value={variant.grams} size="small" fullWidth InputProps={{ readOnly: true }} InputLabelProps={{ sx: { fontSize: '0.95rem' } }} />
+                          <TextField 
+                            label="Stock" 
+                            value={variant.stock} 
+                            size="small" 
+                            fullWidth 
+                            onChange={(e) => handleVariantChange(product.id, idx, 'stock', e.target.value)}
+                          />
+                          <TextField 
+                            label="Weight" 
+                            value={variant.weight} 
+                            size="small" 
+                            fullWidth 
+                            onChange={(e) => handleVariantChange(product.id, idx, 'weight', e.target.value)}
+                          />
+                          <TextField 
+                            label="Grams (g)" 
+                            value={variant.grams} 
+                            size="small" 
+                            fullWidth 
+                            onChange={(e) => handleVariantChange(product.id, idx, 'grams', e.target.value)}
+                          />
                         </Box>
-                        <TextField label="Barcode" value={variant.barcode} size="small" fullWidth InputProps={{ readOnly: true }} InputLabelProps={{ sx: { fontSize: '0.95rem' } }} />
+                        <TextField label="Barcode" value={variant.barcode} size="small" fullWidth InputProps={{ readOnly: true }} />
                       </Box>
                     ))}
                   </Box>
@@ -387,37 +567,6 @@ const ProductManagement: React.FC = () => {
             <Typography variant="h6" sx={{ fontWeight: 700, color: '#222' }}>
               Product Management
             </Typography>
-
-            {selectedProducts.length > 0 && (
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button
-                  variant="outlined"
-                  color="inherit"
-                  sx={{
-                    borderColor: '#e0e0e0',
-                    color: '#666',
-                    '&:hover': {
-                      borderColor: '#303030',
-                      backgroundColor: '#f5f5f5',
-                    },
-                  }}
-                >
-                  Discard
-                </Button>
-                <Button
-                  variant="contained"
-                  sx={{
-                    backgroundColor: '#000',
-                    color: '#fff',
-                    '&:hover': {
-                      backgroundColor: '#333',
-                    },
-                  }}
-                >
-                  Update
-                </Button>
-              </Box>
-            )}
           </Box>
 
           {/* Side by side sections */}
@@ -772,7 +921,6 @@ const ProductManagement: React.FC = () => {
               </Box>
             </Paper>
           </Box>
-          {/* Render SelectedProductsSection below both sections, not inside either */}
           <SelectedProductsSection products={DUMMY_PRODUCTS.filter(p => selectedProducts.includes(p.id))} />
         </Paper>
       </Box>
