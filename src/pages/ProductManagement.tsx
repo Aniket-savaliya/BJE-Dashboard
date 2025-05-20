@@ -87,6 +87,8 @@ const SelectedProductsSection = ({ products }: { products: typeof DUMMY_PRODUCTS
   const [page, setPage] = useState(0);
   const [editedProducts, setEditedProducts] = useState<typeof DUMMY_PRODUCTS>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showDiscardWarning, setShowDiscardWarning] = useState(false);
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const itemsPerPage = 2;
 
   // Initialize edited products when products prop changes
@@ -142,11 +144,22 @@ const SelectedProductsSection = ({ products }: { products: typeof DUMMY_PRODUCTS
     products.forEach((product, index) => {
       Object.assign(product, editedProducts[index]);
     });
+    setShowSaveSuccess(true);
+    setTimeout(() => setShowSaveSuccess(false), 3000); // Hide success message after 3 seconds
   };
 
   const handleDiscard = () => {
+    setShowDiscardWarning(true);
+  };
+
+  const confirmDiscard = () => {
     setEditedProducts(products);
     setHasUnsavedChanges(false);
+    setShowDiscardWarning(false);
+  };
+
+  const cancelDiscard = () => {
+    setShowDiscardWarning(false);
   };
 
   if (!products.length) return null;
@@ -188,6 +201,58 @@ const SelectedProductsSection = ({ products }: { products: typeof DUMMY_PRODUCTS
               Save Changes
             </Button>
           </Box>
+        </Box>
+      )}
+
+      {showDiscardWarning && (
+        <Box sx={{ 
+          mb: 1, 
+          p: 1, 
+          bgcolor: '#f8d7da', 
+          border: '1px solid #f5c6cb',
+          borderRadius: '4px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <Typography sx={{ color: '#721c24', fontSize: '0.9rem' }}>
+            Are you sure you want to discard all changes? This action cannot be undone.
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={cancelDiscard}
+              sx={{ borderColor: '#721c24', color: '#721c24' }}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="small"
+              variant="contained"
+              onClick={confirmDiscard}
+              sx={{ bgcolor: '#721c24', '&:hover': { bgcolor: '#5a1a1a' } }}
+            >
+              Confirm Discard
+            </Button>
+          </Box>
+        </Box>
+      )}
+
+      {showSaveSuccess && (
+        <Box sx={{ 
+          mb: 1, 
+          p: 1, 
+          bgcolor: '#d4edda', 
+          border: '1px solid #c3e6cb',
+          borderRadius: '4px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <Typography sx={{ color: '#155724', fontSize: '0.9rem' }}>
+            Changes saved successfully!
+          </Typography>
         </Box>
       )}
       <Paper elevation={0} sx={{ border: '1px solid #e0e0e0', borderRadius: '12px', p: 2, background: '#fff', boxShadow: 'none' }}>
@@ -891,10 +956,11 @@ const ProductManagement: React.FC = () => {
                             onClick={() => handleStoreToggle(store.id)}
                             sx={{
                               px: 2,
-                              py: 1.2,
-                              alignItems: 'flex-start',
+                              py: 1,
+                              alignItems: 'center',
                               background: selectedStores.includes(store.id) ? '#f3f7fa' : 'transparent',
                               '&:hover': { background: '#f5f7fa' },
+                              minHeight: '48px'
                             }}
                           >
                             <Checkbox
@@ -902,11 +968,20 @@ const ProductManagement: React.FC = () => {
                               checked={selectedStores.includes(store.id)}
                               tabIndex={-1}
                               disableRipple
-                              sx={{ p: 0.5, mr: 1, mt: 0.5 }}
+                              sx={{ p: 0.5, mr: 1 }}
                             />
-                            <Box>
-                              <Typography sx={{ fontWeight: 600, fontSize: '1.05rem', color: '#222' }}>{store.name}</Typography>
-                            </Box>
+                            <Typography 
+                              sx={{ 
+                                fontWeight: 500, 
+                                fontSize: '0.95rem', 
+                                color: '#222',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                              }}
+                            >
+                              {store.name}
+                            </Typography>
                           </ListItemButton>
                         ))}
                         {filteredStores.length === 0 && (
