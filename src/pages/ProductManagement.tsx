@@ -149,7 +149,10 @@ const SelectedProductsSection = ({ products }: { products: typeof DUMMY_PRODUCTS
   };
 
   const handleDiscard = () => {
-    setShowDiscardWarning(true);
+    const confirmed = window.confirm('Are you sure you want to discard all changes? This action cannot be undone.');
+    if (confirmed) {
+      confirmDiscard();
+    }
   };
 
   const confirmDiscard = () => {
@@ -199,41 +202,6 @@ const SelectedProductsSection = ({ products }: { products: typeof DUMMY_PRODUCTS
               sx={{ bgcolor: '#856404', '&:hover': { bgcolor: '#6d5204' } }}
             >
               Save Changes
-            </Button>
-          </Box>
-        </Box>
-      )}
-
-      {showDiscardWarning && (
-        <Box sx={{ 
-          mb: 1, 
-          p: 1, 
-          bgcolor: '#f8d7da', 
-          border: '1px solid #f5c6cb',
-          borderRadius: '4px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          <Typography sx={{ color: '#721c24', fontSize: '0.9rem' }}>
-            Are you sure you want to discard all changes? This action cannot be undone.
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button
-              size="small"
-              variant="outlined"
-              onClick={cancelDiscard}
-              sx={{ borderColor: '#721c24', color: '#721c24' }}
-            >
-              Cancel
-            </Button>
-            <Button
-              size="small"
-              variant="contained"
-              onClick={confirmDiscard}
-              sx={{ bgcolor: '#721c24', '&:hover': { bgcolor: '#5a1a1a' } }}
-            >
-              Confirm Discard
             </Button>
           </Box>
         </Box>
