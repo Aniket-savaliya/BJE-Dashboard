@@ -176,14 +176,14 @@ const SelectedProductsSection = ({ products }: { products: typeof DUMMY_PRODUCTS
         <Box sx={{ 
           mb: 1, 
           p: 1, 
-          bgcolor: '#fff3cd', 
-          border: '1px solid #ffeeba',
+          bgcolor: '#e3f2fd', 
+          border: '1px solid #bbdefb',
           borderRadius: '4px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between'
         }}>
-          <Typography sx={{ color: '#856404', fontSize: '0.9rem' }}>
+          <Typography sx={{ color: '#1976D2', fontSize: '0.9rem' }}>
             You have unsaved changes. Please save or discard your changes.
           </Typography>
           <Box sx={{ display: 'flex', gap: 1 }}>
@@ -191,7 +191,7 @@ const SelectedProductsSection = ({ products }: { products: typeof DUMMY_PRODUCTS
               size="small"
               variant="outlined"
               onClick={handleDiscard}
-              sx={{ borderColor: '#856404', color: '#856404' }}
+              sx={{ borderColor: '#1976D2', color: '#1976D2' }}
             >
               Discard
             </Button>
@@ -199,7 +199,7 @@ const SelectedProductsSection = ({ products }: { products: typeof DUMMY_PRODUCTS
               size="small"
               variant="contained"
               onClick={handleSave}
-              sx={{ bgcolor: '#856404', '&:hover': { bgcolor: '#6d5204' } }}
+              sx={{ bgcolor: '#1976D2', '&:hover': { bgcolor: '#1565c0' } }}
             >
               Save Changes
             </Button>
@@ -211,14 +211,14 @@ const SelectedProductsSection = ({ products }: { products: typeof DUMMY_PRODUCTS
         <Box sx={{ 
           mb: 1, 
           p: 1, 
-          bgcolor: '#d4edda', 
-          border: '1px solid #c3e6cb',
+          bgcolor: '#e3f2fd', 
+          border: '1px solid #bbdefb',
           borderRadius: '4px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between'
         }}>
-          <Typography sx={{ color: '#155724', fontSize: '0.9rem' }}>
+          <Typography sx={{ color: '#1976D2', fontSize: '0.9rem' }}>
             Changes saved successfully!
           </Typography>
         </Box>
@@ -469,11 +469,15 @@ const SelectedProductsSection = ({ products }: { products: typeof DUMMY_PRODUCTS
               size="small"
               sx={{ 
                 minWidth: 90,
-                borderColor: '#000',
-                color: '#000',
+                borderColor: '#1976D2',
+                color: '#1976D2',
                 '&:hover': {
-                  borderColor: '#303030',
-                  backgroundColor: '#f5f5f5',
+                  borderColor: '#1565c0',
+                  backgroundColor: '#e3f2fd',
+                },
+                '&.Mui-disabled': {
+                  borderColor: '#bbdefb',
+                  color: '#bbdefb'
                 }
               }}
             >
@@ -488,12 +492,12 @@ const SelectedProductsSection = ({ products }: { products: typeof DUMMY_PRODUCTS
                   size="small"
                   sx={{ 
                     minWidth: 35,
-                    backgroundColor: page === i ? '#000' : 'transparent',
-                    color: page === i ? '#fff' : '#303030',
-                    borderColor: '#000',
+                    backgroundColor: page === i ? '#1976D2' : 'transparent',
+                    color: page === i ? '#fff' : '#1976D2',
+                    borderColor: '#1976D2',
                     '&:hover': {
-                      backgroundColor: page === i ? '#333' : '#f5f5f5',
-                      borderColor: '#000',
+                      backgroundColor: page === i ? '#1565c0' : '#e3f2fd',
+                      borderColor: '#1976D2',
                     }
                   }}
                 >
@@ -508,11 +512,15 @@ const SelectedProductsSection = ({ products }: { products: typeof DUMMY_PRODUCTS
               size="small"
               sx={{ 
                 minWidth: 90,
-                borderColor: '#000',
-                color: '#303030',
+                borderColor: '#1976D2',
+                color: '#1976D2',
                 '&:hover': {
-                  borderColor: '#000',
-                  backgroundColor: '#f5f5f5',
+                  borderColor: '#1565c0',
+                  backgroundColor: '#e3f2fd',
+                },
+                '&.Mui-disabled': {
+                  borderColor: '#bbdefb',
+                  color: '#bbdefb'
                 }
               }}
             >
