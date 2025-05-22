@@ -83,6 +83,26 @@ const FILTERS = {
   tags: ['Filter by tags', 'Beef', 'Spicy', 'Classic', 'Gift Box', 'Sampler', 'Sweet', 'Peppered', 'Teriyaki'],
 };
 
+// Add these utility functions at the top level, before the components
+const compareValues = (oldValue: any, newValue: any): boolean => {
+  if (Array.isArray(oldValue)) {
+    return JSON.stringify(oldValue) !== JSON.stringify(newValue);
+  }
+  return oldValue !== newValue;
+};
+
+const getChangedFields = (oldObj: any, newObj: any, fields: string[]): Record<string, any> => {
+  const changes: Record<string, any> = {};
+  
+  fields.forEach(field => {
+    if (compareValues(oldObj[field], newObj[field])) {
+      changes[field] = newObj[field];
+    }
+  });
+
+  return changes;
+};
+
 const SelectedProductsSection = ({ products }: { products: typeof DUMMY_PRODUCTS }) => {
   const [page, setPage] = useState(0);
   const [editedProducts, setEditedProducts] = useState<typeof DUMMY_PRODUCTS>([]);
@@ -138,14 +158,64 @@ const SelectedProductsSection = ({ products }: { products: typeof DUMMY_PRODUCTS
   };
 
   const handleSave = () => {
-    // Here you would typically make an API call to save the changes
+    // Compare original products with edited products to determine what changed
+    editedProducts.forEach((editedProduct, index) => {
+      const originalProduct = products[index];
+      const changes: Record<string, any> = {
+        productId: editedProduct.id
+      };
+
+      // Define fields to check for product changes
+      const productFields = ['title', 'vendor', 'status', 'tags'];
+      const productChanges = getChangedFields(originalProduct, editedProduct, productFields);
+
+      // If there are product changes, add them to the payload
+      if (Object.keys(productChanges).length > 0) {
+        Object.assign(changes, productChanges);
+      }
+
+      // Check for changes in variants
+      if (editedProduct.variants.length > 0) {
+        const variantChanges = editedProduct.variants.map((editedVariant, variantIndex) => {
+          const originalVariant = originalProduct.variants[variantIndex];
+          if (!originalVariant) return null;
+
+          // Define fields to check for variant changes
+          const variantFields = ['price', 'cost', 'stock', 'weight', 'grams'];
+          const variantChange = getChangedFields(originalVariant, editedVariant, variantFields);
+
+          // Only include variant if there are actual changes
+          if (Object.keys(variantChange).length > 0) {
+            return {
+              variantId: editedVariant.sku,
+              ...variantChange
+            };
+          }
+          return null;
+        }).filter(Boolean);
+
+        if (variantChanges.length > 0) {
+          changes.variants = variantChanges;
+        }
+      }
+
+      // Only log if there are actual changes
+      if (Object.keys(changes).length > 1) {
+        console.log('Product Update Payload:', changes);
+      }
+    });
+
     setHasUnsavedChanges(false);
     // Update the original products with edited values
     products.forEach((product, index) => {
       Object.assign(product, editedProducts[index]);
     });
+    
     setShowSaveSuccess(true);
-    setTimeout(() => setShowSaveSuccess(false), 3000); // Hide success message after 3 seconds
+    // Use a simple timeout without ref
+    setTimeout(() => {
+      setShowSaveSuccess(false);
+    }, 2000);
   };
 
   const handleDiscard = () => {
@@ -346,7 +416,7 @@ const SelectedProductsSection = ({ products }: { products: typeof DUMMY_PRODUCTS
                     onChange={(e) => handleFieldChange(product.id, 'status', e.target.value)}
                   >
                     <MenuItem value="Active">Active</MenuItem>
-                    <MenuItem value="inactive">Inactive</MenuItem>
+                    <MenuItem value="Inactive">Inactive</MenuItem>
                   </Select>
                 </FormControl>
 
