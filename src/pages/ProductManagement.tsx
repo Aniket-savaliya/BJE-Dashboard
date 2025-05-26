@@ -391,7 +391,8 @@ const SelectedProductsSection = ({ products }: { products: typeof DUMMY_PRODUCTS
                 size="small" 
                 fullWidth 
                 sx={{ background: '#fff' }} 
-                InputLabelProps={{ sx: { fontSize: '0.95rem' } }} 
+                InputLabelProps={{ sx: { fontSize: '0.95rem' } }}
+                onChange={(e) => handleFieldChange(product.id, 'title', e.target.value)}
               />
 
               {/* First Row: Vendor, Status, Type */}
